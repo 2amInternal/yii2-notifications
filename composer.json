@@ -1,0 +1,38 @@
+{
+    "name": "dvamigos/yii2-notifications",
+    "description": "Notification system for Yii 2+",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Aleksandar Panic",
+            "email": "arekusanda1@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "dvamigos\\Yii2\\Notifications\\": "src"
+        }
+    },
+    "require": {
+        "php": ">=7.0",
+        "yiisoft/yii2": "2.0.*"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ],
+    "config": {
+        "process-timeout": 1800,
+        "fxp-asset":{
+            "enabled" : false,
+            "installer-paths": {
+                "npm-asset-library": "vendor/npm",
+                "bower-asset-library": "vendor/bower"
+            }
+        }
+    }
+}
