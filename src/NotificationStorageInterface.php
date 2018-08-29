@@ -12,6 +12,13 @@ use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
 interface NotificationStorageInterface
 {
     /**
+     * Sets storage owner component.
+     *
+     * @param NotificationComponent $owner
+     */
+    public function setOwner(NotificationComponent $owner);
+
+    /**
      * Creates new notification in the storage for specified user.
      *
      * @param $type string Notification type
@@ -20,7 +27,7 @@ interface NotificationStorageInterface
      *
      * @throws SaveFailedException Throws exception if storage could not save this notification.
      *
-     * @return NotificationInterface Instance of this notification.
+     * @return NotificationInterface Instance of new notification.
      */
     public function create($type, $data, $userId);
 
@@ -28,12 +35,15 @@ interface NotificationStorageInterface
      * Replaces notification ID with new notification ID.
      *
      * @param $id int ID of the notification to be replaced.
-     * @param $withId int ID of the notification which replaces this notification.
-     * @param $userId int User to be used.
+     * @param $type string Notification type
+     * @param $data array Additional data for this notification.
+     * @param $userId int User ID for which this notification relates to.
      *
      * @throws SaveFailedException Throws exception if storage could not save this notification.
+     *
+     * @return NotificationInterface Instance of new notification.
      */
-    public function replace($id, $withId, $userId);
+    public function replace($id, $type, $data, $userId);
 
 
     /**
@@ -74,8 +84,6 @@ interface NotificationStorageInterface
      *
      * @param $userId int User for which notifications will be marked as read.
      * @throws SaveFailedException Throws exception if storage could not save this notification.
-     *
-     * @return mixed
      */
     public function markAllRead($userId);
 

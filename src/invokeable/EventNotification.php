@@ -9,7 +9,6 @@ namespace dvamigos\Yii2\Notifications\invokeable;
 
 use dvamigos\Yii2\Notifications\NotificationComponent;
 use Yii;
-use yii\di\Instance;
 
 abstract class EventNotification extends \yii\base\BaseObject
 {

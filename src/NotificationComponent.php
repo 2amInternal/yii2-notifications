@@ -7,6 +7,7 @@
 
 namespace dvamigos\Yii2\Notifications;
 
+use dvamigos\Yii2\Notifications\storage\DatabaseStorage;
 use Yii;
 use yii\base\Component;
 use yii\base\Exception;
@@ -27,7 +28,7 @@ class NotificationComponent extends Component
      *
      * @var NotificationStorageInterface|string
      */
-    public $storage;
+    public $storage = DatabaseStorage::class;
 
     /**
      * List of notification type groups which will be available for this notification.
@@ -111,14 +112,7 @@ class NotificationComponent extends Component
      */
     public function replace($id, $type, $data = [], $userId = null)
     {
-        $userId = $this->resolveUserId($userId);
-
-        /** @var NotificationInterface $model */
-        $model = $this->storage->create($type, $data, $userId);
-
-        $this->storage->replace($id, $model->getId(), $userId);
-
-        return $model;
+        return $this->storage->replace($id, $type, $data, $this->resolveUserId($userId));
     }
 
     /**
@@ -178,19 +172,6 @@ class NotificationComponent extends Component
     public function getNotifications($userId = null)
     {
         return $this->storage->findNotifications($userId);
-    }
-
-    /**
-     * Resolves text of the notification based on the type.
-     *
-     * @param $notification NotificationInterface Notification which will be used to get text.
-     *
-     * @return string Resolved text.
-     * @throws Exception
-     */
-    public function getNotificationText($notification)
-    {
-        return $this->getText($notification->getType(), $notification->getData());
     }
 
     /**
