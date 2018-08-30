@@ -8,18 +8,36 @@
 namespace dvamigos\Yii2\Notifications\targets;
 
 use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
-use dvamigos\Yii2\Notifications\models\Notification;
+use dvamigos\Yii2\Notifications\Notification;
 use dvamigos\Yii2\Notifications\NotificationManager;
 use dvamigos\Yii2\Notifications\NotificationInterface;
 use dvamigos\Yii2\Notifications\NotificationTargetInterface;
 use Yii;
 use yii\base\BaseObject;
 use yii\base\Exception;
+use yii\db\Connection;
+use yii\db\Query;
+use yii\di\Instance;
+use yii\helpers\Json;
 
 class DatabaseTarget extends BaseObject implements NotificationTargetInterface
 {
     /** @var string|Notification */
-    public $storageClass = Notification::class;
+    public $dataClass = Notification::class;
+
+    /**
+     * Database connection used for storage.
+     *
+     * @var string|Connection
+     */
+    public $db = 'db';
+
+    /**
+     * Notification Table
+     *
+     * @var string
+     */
+    public $notificationsTable = '{{%notifications}}';
 
     /** @var NotificationManager */
     protected $owner;
@@ -30,6 +48,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
     public function init()
     {
         parent::init();
+        $this->db = Instance::ensure($this->db, Connection::class);
     }
 
     public function setOwner(NotificationManager $owner)
@@ -45,26 +64,25 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $userId int User ID for which this notification relates to.
      *
      * @throws SaveFailedException Throws exception if storage could not save this notification.
+     * @throws \yii\db\Exception
+     * @throws \yii\base\InvalidConfigException
      *
      * @return NotificationInterface Instance of this notification.
      */
     public function create($type, $data, $userId)
     {
-        $storageClass = $this->storageClass;
+        $data = [
+            'type' => $type,
+            'data' => Json::encode($data),
+            'user_id' => $userId,
+            'created_at' => time(),
+            'is_read' => 0
+        ];
 
-        /** @var Notification $model */
-        $model = new $storageClass();
+        $this->db->createCommand()->insert($this->notificationsTable, $data)->execute();
+        $data['id'] = $this->db->getLastInsertID();
 
-        $model->setType($type);
-        $model->setData($data);
-
-        $model->created_by = $userId;
-
-        $model->setOwner($this->owner);
-
-        $model->persist();
-
-        return $model;
+        return $this->createNotificationInstance($data);
     }
 
     /**
@@ -82,9 +100,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     public function replace($id, $type, $data, $userId)
     {
-        $replacement = $this->findNotification($id, $userId);
-        $replacement->markAsDeleted();
-
+        $this->markAsDeleted($id, $userId);
         return $this->create($type, $data, $userId);
     }
 
@@ -95,19 +111,18 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $userId int User to be used.
      *
      * @throws Exception
-     *
-     * @return bool Whether or not notification is marked as read. False if it was already.
      */
     public function markAsRead($id, $userId)
     {
-        $notification = $this->findNotification($id, $userId);
-
-        if ($notification->isRead()) {
-            return false;
-        }
-
-        $notification->markAsRead();
-        return true;
+        $this->db->createCommand()
+            ->update($this->notificationsTable, [
+                'is_read' => 1,
+                'updated_at' => time()
+            ], [
+                'user_id' => $userId,
+                'id' => $id
+            ])
+            ->execute();
     }
 
     /**
@@ -118,19 +133,18 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      *
      * @throws SaveFailedException Throws exception if storage could not save this notification.
      * @throws Exception
-     *
-     * @return bool Whether or not notification is marked as deleted. False if it was already.
      */
     public function markAsDeleted($id, $userId)
     {
-        $notification = $this->findNotificationModel($id, $userId);
-
-        if (empty($notification)) {
-            return false;
-        }
-
-        $notification->markAsDeleted();
-        return true;
+        $this->db->createCommand()
+            ->update($this->notificationsTable, [
+                'is_deleted' => 1,
+                'updated_at' => time()
+            ], [
+                'user_id' => $userId,
+                'id' => $id
+            ])
+            ->execute();
     }
 
     /**
@@ -139,11 +153,19 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $userId int User for which notifications will be cleared.
      *
      * @throws SaveFailedException Throws exception if storage could not save this notification.
+     * @throws \yii\db\Exception
      */
     public function clearAll($userId)
     {
-        $storageClass = $this->storageClass;
-        $storageClass::deleteAllForUser($userId);
+        $this->db->createCommand()
+            ->update($this->notificationsTable, [
+                'is_deleted' => 1,
+                'updated_at' => time()
+            ], [
+                'user_id' => $userId,
+                'is_deleted' => 0
+            ])
+            ->execute();
     }
 
     /**
@@ -151,11 +173,18 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      *
      * @param $userId int User for which notifications will be marked as read.
      * @throws SaveFailedException Throws exception if storage could not save this notification.
+     * @throws \yii\db\Exception
      */
     public function markAllRead($userId)
     {
-        $storageClass = $this->storageClass;
-        $storageClass::readAllForUser($userId);
+        $this->db->createCommand()
+            ->update($this->notificationsTable, [
+                'is_read' => 1
+            ], [
+                'user_id' => $userId,
+                'is_read' => 0
+            ])
+            ->execute();
     }
 
     /**
@@ -166,11 +195,17 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     public function findNotifications($userId)
     {
-        $storageClass = $this->storageClass;
+        $items = (new Query())
+            ->from($this->notificationsTable)
+            ->where([
+                'user_id' => $userId,
+                'is_deleted' => 0,
+            ])
+            ->all($this->db);
 
-        return array_map(function(NotificationInterface $notification) {
-            $notification->setOwner($this->owner);
-        }, $storageClass::findAllForUser($userId));
+        return array_map(function ($data) {
+            $this->createNotificationInstance($data);
+        }, $items);
     }
 
     /**
@@ -183,7 +218,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     protected function findNotification($id, $userId)
     {
-        $model = $this->findNotificationModel($id, $userId);
+        $model = $this->findNotificationInstance($id, $userId);
 
         if (empty($model)) {
             throw new Exception(Yii::t('app', 'Notification ID to be replaced not found.'));
@@ -192,14 +227,52 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         return $model;
     }
 
-    protected function findNotificationModel($id, $userId)
+    /**
+     * Find and returns notification instance or null if not found.
+     *
+     * @param $id int Notification ID
+     * @param $userId int Notification User ID
+     * @return Notification|null
+     * @throws \yii\base\InvalidConfigException
+     * @throws \yii\db\Exception
+     */
+    protected function findNotificationInstance($id, $userId)
     {
-        /** @var Notification $storageClass */
-        $storageClass = $this->storageClass;
+        $data = (new Query())
+            ->from($this->notificationsTable)
+            ->where([
+                'id' => $id,
+                'user_id' => $userId,
+                'is_deleted' => 0
+            ])
+            ->one($this->db);
+
+        return $this->createNotificationInstance($data);
+    }
+
+    /**
+     * Creates and returns notification instance from data.
+     *
+     * @param $data array|bool If data is false then result is null
+     * @return Notification|null
+     * @throws \yii\base\InvalidConfigException
+     */
+    protected function createNotificationInstance($data)
+    {
+        if ($data === false) {
+            return null;
+        }
 
         /** @var Notification $model */
-        $model = $storageClass::findForUser($id, $userId);
-        $model->setOwner($this->owner);
+        $model = Yii::createObject($this->dataClass);
+
+        $model->id = $data['id'];
+        $model->type = $data['type'];
+        $model->data = is_string($data['data']) ? Json::decode($data['data']) : $data['data'];
+        $model->userId = $data['user_id'];
+        $model->timestamp = $data['created_at'];
+        $model->isRead = (bool)$data['is_read'];
+        $model->owner = $this->owner;
 
         return $model;
     }

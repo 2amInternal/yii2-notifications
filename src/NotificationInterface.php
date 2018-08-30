@@ -10,15 +10,6 @@ namespace dvamigos\Yii2\Notifications;
 interface NotificationInterface
 {
     /**
-     * Returns notification by ID.
-     *
-     * @param $id int ID of the notification
-     * @param $userId int User ID owner of the notification.
-     * @return NotificationInterface|null
-     */
-    public static function findForUser($id, $userId);
-
-    /**
      * Sets notification owner component
      *
      * @param NotificationManager $owner
@@ -38,13 +29,6 @@ interface NotificationInterface
      * @return int
      */
     public function getId();
-
-    /**
-     * Returns array of first errors for which this storage could not save changes.
-     *
-     * @return array List of strings describing the errors.
-     */
-    public function getFirstErrors();
 
     /**
      * Returns type of this notification.
@@ -70,22 +54,18 @@ interface NotificationInterface
      */
     public function getTimestamp();
 
-
-    /**
-     * Marks notification as read.
-     */
-    public function markAsRead();
-
-
-    /**
-     * Marks notification as deleted.
-     */
-    public function markAsDeleted();
-
     /**
      * Returns whether or not notification is read.
      *
      * @return bool
      */
     public function isRead();
+
+
+    /**
+     * Returns user which owns this notification
+     *
+     * @return int
+     */
+    public function getUserId();
 }

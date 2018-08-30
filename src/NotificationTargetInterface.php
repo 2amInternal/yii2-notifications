@@ -53,8 +53,6 @@ interface NotificationTargetInterface
      * @param $userId int User to be used.
      *
      * @throws SaveFailedException Throws exception if storage could not save this notification.
-     *
-     * @return bool Whether or not notification is marked as read. False if it was already.
      */
     public function markAsRead($id, $userId);
 
@@ -65,8 +63,6 @@ interface NotificationTargetInterface
      * @param $userId int User to be used. If null it refers to current user.
      *
      * @throws SaveFailedException Throws exception if storage could not save this notification.
-     *
-     * @return bool Whether or not notification is marked as deleted. False if it was already.
      */
     public function markAsDeleted($id, $userId);
 
