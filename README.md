@@ -19,7 +19,7 @@ Add notification component configuration in your application config:
 [
     'components' => [
         'notifications' => [
-            'class' => '\dvamigos\Yii2\Notifications\Notification',
+            'class' => '\dvamigos\Yii2\Notifications\NotificationManager',
             'types' => [
                 'my_notification' => 'This is my notification'
             ]
@@ -47,7 +47,7 @@ Below is an example of a notification having a `title` and a `message`.
 [
     'components' => [
         'notifications' => [
-            'class' => '\dvamigos\Yii2\Notifications\Notification',
+            'class' => '\dvamigos\Yii2\Notifications\NotificationManager',
             'types' => [
                 'new_user' => [
                     'title' => 'New user created!',

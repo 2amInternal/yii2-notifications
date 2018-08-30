@@ -37,7 +37,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      *
      * @var string
      */
-    public $notificationsTable = '{{%notifications}}';
+    public $notificationsTable = '{{notification}}';
 
     /** @var NotificationManager */
     protected $owner;
