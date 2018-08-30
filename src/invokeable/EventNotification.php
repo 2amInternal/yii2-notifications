@@ -7,7 +7,7 @@
 
 namespace dvamigos\Yii2\Notifications\invokeable;
 
-use dvamigos\Yii2\Notifications\NotificationComponent;
+use dvamigos\Yii2\Notifications\NotificationManager;
 use Yii;
 use yii\base\Event;
 
@@ -52,7 +52,7 @@ abstract class EventNotification extends \yii\base\BaseObject
      * If string then this will be resolved to manager component using Yii::$app->get()
      * If NotificationComponent then that component will be used directly.
      *
-     * @var string|NotificationComponent
+     * @var string|NotificationManager
      */
     public $notificationManager = 'notification';
 
@@ -71,12 +71,12 @@ abstract class EventNotification extends \yii\base\BaseObject
     /**
      * Returns current notification manager assigned to this event notification.
      *
-     * @return NotificationComponent
+     * @return NotificationManager
      * @throws \yii\base\InvalidConfigException
      */
     public function getManager()
     {
-        /** @var NotificationComponent $manager */
+        /** @var NotificationManager $manager */
         $manager = is_string($this->notificationManager) ? Yii::$app->get($this->notificationManager) : $this->notificationManager;
         return $manager;
     }

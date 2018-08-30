@@ -8,7 +8,7 @@
 namespace dvamigos\Yii2\Notifications\models;
 
 use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
-use dvamigos\Yii2\Notifications\NotificationComponent;
+use dvamigos\Yii2\Notifications\NotificationManager;
 use dvamigos\Yii2\Notifications\NotificationInterface;
 use yii\behaviors\BlameableBehavior;
 use yii\behaviors\TimestampBehavior;
@@ -27,10 +27,10 @@ use yii\helpers\Json;
  * @property string $created_by
  * @property string $updated_by
  */
-class Notifications extends \yii\db\ActiveRecord implements NotificationInterface
+class Notification extends \yii\db\ActiveRecord implements NotificationInterface
 {
     /**
-     * @var NotificationComponent
+     * @var NotificationManager
      */
     protected $owner;
 
@@ -181,9 +181,9 @@ class Notifications extends \yii\db\ActiveRecord implements NotificationInterfac
     /**
      * Sets notification owner component
      *
-     * @param NotificationComponent $owner
+     * @param Notification $owner
      */
-    public function setOwner(NotificationComponent $owner)
+    public function setOwner(NotificationManager $owner)
     {
         $this->owner = $owner;
     }
@@ -196,6 +196,6 @@ class Notifications extends \yii\db\ActiveRecord implements NotificationInterfac
      */
     public function getCompiledText()
     {
-        return $this->owner->getText($this->getType(), $this->getData());
+        return $this->owner->compileText($this->getType(), $this->getData());
     }
 }

@@ -5,24 +5,24 @@
  *
  **/
 
-namespace dvamigos\Yii2\Notifications\storage;
+namespace dvamigos\Yii2\Notifications\targets;
 
 
 use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
-use dvamigos\Yii2\Notifications\models\Notifications;
-use dvamigos\Yii2\Notifications\NotificationComponent;
+use dvamigos\Yii2\Notifications\models\Notification;
+use dvamigos\Yii2\Notifications\NotificationManager;
 use dvamigos\Yii2\Notifications\NotificationInterface;
-use dvamigos\Yii2\Notifications\NotificationStorageInterface;
+use dvamigos\Yii2\Notifications\NotificationTargetInterface;
 use Yii;
 use yii\base\BaseObject;
 use yii\base\Exception;
 
-class DatabaseStorage extends BaseObject implements NotificationStorageInterface
+class DatabaseTarget extends BaseObject implements NotificationTargetInterface
 {
-    /** @var string|Notifications */
-    public $storageClass = Notifications::class;
+    /** @var string|Notification */
+    public $storageClass = Notification::class;
 
-    /** @var NotificationComponent */
+    /** @var Notification */
     protected $owner;
 
     /**
@@ -33,7 +33,7 @@ class DatabaseStorage extends BaseObject implements NotificationStorageInterface
         parent::init();
     }
 
-    public function setOwner(NotificationComponent $owner)
+    public function setOwner(Notification $owner)
     {
         $this->owner = $owner;
     }
@@ -53,7 +53,7 @@ class DatabaseStorage extends BaseObject implements NotificationStorageInterface
     {
         $storageClass = $this->storageClass;
 
-        /** @var Notifications $model */
+        /** @var Notification $model */
         $model = new $storageClass();
 
         $model->setType($type);
@@ -179,7 +179,7 @@ class DatabaseStorage extends BaseObject implements NotificationStorageInterface
      *
      * @param $id int Notification ID
      * @param $userId int Notification User ID
-     * @return Notifications
+     * @return Notification
      * @throws Exception
      */
     protected function findNotification($id, $userId)
@@ -195,10 +195,10 @@ class DatabaseStorage extends BaseObject implements NotificationStorageInterface
 
     protected function findNotificationModel($id, $userId)
     {
-        /** @var Notifications $storageClass */
+        /** @var Notification $storageClass */
         $storageClass = $this->storageClass;
 
-        /** @var Notifications $model */
+        /** @var Notification $model */
         $model = $storageClass::findForUser($id, $userId);
         $model->setOwner($this->owner);
 

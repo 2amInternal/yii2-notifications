@@ -9,14 +9,14 @@ namespace dvamigos\Yii2\Notifications;
 
 use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
 
-interface NotificationStorageInterface
+interface NotificationTargetInterface
 {
     /**
      * Sets storage owner component.
      *
-     * @param NotificationComponent $owner
+     * @param NotificationManager $owner
      */
-    public function setOwner(NotificationComponent $owner);
+    public function setOwner(NotificationManager $owner);
 
     /**
      * Creates new notification in the storage for specified user.

@@ -7,7 +7,7 @@
 
 namespace dvamigos\Yii2\Notifications\invokeable;
 
-use dvamigos\Yii2\Notifications\NotificationComponent;
+use dvamigos\Yii2\Notifications\NotificationManager;
 use Yii;
 use yii\base\Event;
 use yii\di\Instance;

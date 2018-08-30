@@ -21,9 +21,9 @@ interface NotificationInterface
     /**
      * Sets notification owner component
      *
-     * @param NotificationComponent $owner
+     * @param NotificationManager $owner
      */
-    public function setOwner(NotificationComponent $owner);
+    public function setOwner(NotificationManager $owner);
 
     /**
      * Returns compiled notification text.

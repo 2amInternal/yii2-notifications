@@ -7,14 +7,15 @@
 
 namespace dvamigos\Yii2\Notifications;
 
-use dvamigos\Yii2\Notifications\storage\DatabaseStorage;
+use dvamigos\Yii2\Notifications\exceptions\TargetStackEmptyException;
+use dvamigos\Yii2\Notifications\targets\DatabaseTarget;
 use Yii;
 use yii\base\Component;
 use yii\base\Exception;
 use yii\di\Instance;
 use yii\web\User;
 
-class NotificationComponent extends Component
+class NotificationManager extends Component
 {
     /**
      * Translation category used for mapping translations.
@@ -26,9 +27,41 @@ class NotificationComponent extends Component
     /**
      * Storage handler for notifications.
      *
-     * @var NotificationStorageInterface|string
+     * Format is in:
+     *
+     * [
+     *     'database' => DatabaseTarget::class
+     * ]
+     *
+     * or:
+     *
+     * [
+     *     'database' => [
+     *          'class' => DatabaseTarget::class,
+     *          'config1' => 'value'
+     *     ]
+     * ]
+     *
+     * @var NotificationTargetInterface|string
      */
-    public $storage = DatabaseStorage::class;
+    public $targets = [
+        'database' => DatabaseTarget::class
+    ];
+
+    /**
+     * Default target for notification
+     *
+     * If target is string then one target is used and every function will return result directly
+     * from that target.
+     *
+     * If multiple targets are used then everything is executed on multiple targets and results
+     * are serialized in associative array.
+     *
+     * @see NotificationManager::callTarget()
+     *
+     * @var string|array
+     */
+    public $target = 'database';
 
     /**
      * List of notification type groups which will be available for this notification.
@@ -72,6 +105,19 @@ class NotificationComponent extends Component
      */
     public $user = 'user';
 
+    /**
+     * Target instances
+     *
+     * @var array
+     */
+    protected $targetObjects = [];
+
+    /**
+     * Target names stack
+     *
+     * @var array
+     */
+    protected $targetNameStack = [];
 
     /**
      * @throws \yii\base\InvalidConfigException
@@ -80,7 +126,45 @@ class NotificationComponent extends Component
     {
         parent::init();
         $this->user = Instance::ensure($this->user, User::class);
-        $this->storage = Instance::ensure($this->storage, NotificationStorageInterface::class);
+    }
+
+    /**
+     * Sets new target as the current target and stores the old target state.
+     *
+     * @param $newTarget string|array New target.
+     */
+    public function pushTarget($newTarget)
+    {
+        $this->targetNameStack[] = $this->target;
+        $this->target = $newTarget;
+    }
+
+    /**
+     * Restores old target from the stack.
+     *
+     * @throws TargetStackEmptyException
+     */
+    public function popTarget()
+    {
+        if (empty($this->targetNameStack)) {
+            throw new TargetStackEmptyException();
+        }
+
+        $this->target = array_pop($this->targetNameStack);
+    }
+
+    /**
+     * Pushes new targets to the stack and executes callable
+     *
+     * @param $targets string|array Targets which will be pushed.
+     * @param $callable callable Callable which will be executed.
+     * @throws TargetStackEmptyException
+     */
+    public function forTargets($targets, $callable)
+    {
+        $this->pushTarget($targets);
+        $callable($this);
+        $this->popTarget();
     }
 
     /**
@@ -96,8 +180,7 @@ class NotificationComponent extends Component
     public function push($type, $data = [], $userId = null)
     {
         $this->validateType($type);
-
-        return $this->storage->create($type, $data, $this->resolveUserId($userId));
+        return $this->callTarget('create', [$type, $data, $this->resolveUserId($userId)]);
     }
 
     /**
@@ -109,10 +192,13 @@ class NotificationComponent extends Component
      * @param $userId integer|null For which user this will be applied. If null current user is used.
      * @return NotificationInterface
      * @throws exceptions\SaveFailedException
+     * @throws \yii\base\InvalidConfigException
+     * @throws Exception
      */
     public function replace($id, $type, $data = [], $userId = null)
     {
-        return $this->storage->replace($id, $type, $data, $this->resolveUserId($userId));
+        $this->validateType($type);
+        return $this->callTarget('replace', [$id, $type, $data, $this->resolveUserId($userId)]);
     }
 
     /**
@@ -121,10 +207,11 @@ class NotificationComponent extends Component
      * @param $id integer notification which will be marked
      * @return bool Whether or not operation is successful.
      * @throws exceptions\SaveFailedException
+     * @throws \yii\base\InvalidConfigException
      */
     public function markAsRead($id, $userId = null)
     {
-        return $this->storage->markAsDeleted($id, $this->resolveUserId($userId));
+        return $this->callTarget('markAsDeleted', [$id, $this->resolveUserId($userId)]);
     }
 
 
@@ -134,10 +221,11 @@ class NotificationComponent extends Component
      * @param int|null $userId User ID which will be used. Current User if null.
      * @return mixed
      * @throws exceptions\SaveFailedException
+     * @throws \yii\base\InvalidConfigException
      */
     public function markAllRead($userId = null)
     {
-        return $this->storage->markAllRead($this->resolveUserId($userId));
+        return $this->callTarget('markAllRead', [$this->resolveUserId($userId)]);
     }
 
     /**
@@ -146,10 +234,11 @@ class NotificationComponent extends Component
      * @param $id integer notification which will be marked
      * @return bool Whether or not operation is successful.
      * @throws exceptions\SaveFailedException
+     * @throws \yii\base\InvalidConfigException
      */
     public function delete($id, $userId = null)
     {
-        return $this->storage->markAsDeleted($id, $this->resolveUserId($userId));
+        return $this->callTarget('markAsDeleted', [$id, $this->resolveUserId($userId)]);
     }
 
     /**
@@ -158,20 +247,22 @@ class NotificationComponent extends Component
      * @param $userId integer|null For which user this will be applied. If null current user is used.
      * @return bool
      * @throws exceptions\SaveFailedException
+     * @throws \yii\base\InvalidConfigException
      */
     public function clearAll($userId = null)
     {
-        return $this->storage->clearAll($this->resolveUserId($userId));
+        return $this->callTarget('clearAll', [$this->resolveUserId($userId)]);
     }
 
     /**
      * Returns array of notifications for this user in format.
      *
      * @return NotificationInterface[] List of notifications.
+     * @throws \yii\base\InvalidConfigException
      */
     public function getNotifications($userId = null)
     {
-        return $this->storage->findNotifications($userId);
+        return $this->callTarget('findNotifications', [$this->resolveUserId($userId)]);
     }
 
     /**
@@ -183,7 +274,7 @@ class NotificationComponent extends Component
      *
      * @throws Exception
      */
-    public function getText($type, $data = [])
+    public function compileText($type, $data = [])
     {
         $this->validateType($type);
 
@@ -228,5 +319,63 @@ class NotificationComponent extends Component
             "This type '{type}' is not defined! Please check your configuration.", [
             'type' => $type
         ]));
+    }
+
+    /**
+     * Executes method on one or more targets and returns the result.
+     *
+     * Result will be returned based on specified $target.
+     *
+     * If target is a string then only result from that target is returned directly.
+     * If target is an array then array is returned in format:
+     * [
+     *    'targetName' => 'result'
+     * ]
+     *
+     * @param $method string method to be executed.
+     * @param $params array params to be passed.
+     * @throws \yii\base\InvalidConfigException
+     *
+     * @return mixed
+     */
+    protected function callTarget($method, $params)
+    {
+        $targets = [];
+
+        if (is_string($this->target)) {
+            $targets[] = $this->getTarget($this->target);
+        } elseif (is_array($this->target)) {
+            foreach ($this->target as $name) {
+                $targets[] = $this->getTarget($name);
+            }
+        }
+
+        $results = [];
+
+        foreach ($targets as $target) {
+            $results[$target] = call_user_func_array([$target, $method], $params);
+        }
+
+        if (is_string($this->target)) {
+            return $results[$this->target];
+        }
+
+        return $results;
+    }
+
+    /**
+     * Returns notification target.
+     *
+     * @param $targetName string target name
+     * @return NotificationTargetInterface
+     * @throws \yii\base\InvalidConfigException
+     */
+    protected function getTarget($targetName)
+    {
+        if (empty($this->targetObjects[$targetName])) {
+            $this->targetObjects[$targetName] = Instance::ensure($this->targets[$targetName], NotificationTargetInterface::class);
+        }
+
+        return $this->targetObjects[$targetName];
     }
 }
