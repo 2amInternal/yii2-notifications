@@ -61,7 +61,7 @@ class NotificationManager extends Component
      *
      * @var string|array
      */
-    public $target = 'database';
+    public $activeTarget = 'database';
 
     /**
      * List of notification type groups which will be available for this notification.
@@ -135,8 +135,8 @@ class NotificationManager extends Component
      */
     public function pushTarget($newTarget)
     {
-        $this->targetNameStack[] = $this->target;
-        $this->target = $newTarget;
+        $this->targetNameStack[] = $this->activeTarget;
+        $this->activeTarget = $newTarget;
     }
 
     /**
@@ -150,7 +150,7 @@ class NotificationManager extends Component
             throw new TargetStackEmptyException();
         }
 
-        $this->target = array_pop($this->targetNameStack);
+        $this->activeTarget = array_pop($this->targetNameStack);
     }
 
     /**
@@ -342,10 +342,10 @@ class NotificationManager extends Component
     {
         $targets = [];
 
-        if (is_string($this->target)) {
-            $targets[] = $this->getTarget($this->target);
-        } elseif (is_array($this->target)) {
-            foreach ($this->target as $name) {
+        if (is_string($this->activeTarget)) {
+            $targets[] = $this->getTarget($this->activeTarget);
+        } elseif (is_array($this->activeTarget)) {
+            foreach ($this->activeTarget as $name) {
                 $targets[] = $this->getTarget($name);
             }
         }
@@ -356,8 +356,8 @@ class NotificationManager extends Component
             $results[$target] = call_user_func_array([$target, $method], $params);
         }
 
-        if (is_string($this->target)) {
-            return $results[$this->target];
+        if (is_string($this->activeTarget)) {
+            return $results[$this->activeTarget];
         }
 
         return $results;

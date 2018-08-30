@@ -7,7 +7,6 @@
 
 namespace dvamigos\Yii2\Notifications\targets;
 
-
 use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
 use dvamigos\Yii2\Notifications\models\Notification;
 use dvamigos\Yii2\Notifications\NotificationManager;
@@ -22,7 +21,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
     /** @var string|Notification */
     public $storageClass = Notification::class;
 
-    /** @var Notification */
+    /** @var NotificationManager */
     protected $owner;
 
     /**
@@ -33,7 +32,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         parent::init();
     }
 
-    public function setOwner(Notification $owner)
+    public function setOwner(NotificationManager $owner)
     {
         $this->owner = $owner;
     }
