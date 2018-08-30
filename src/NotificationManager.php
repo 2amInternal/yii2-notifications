@@ -343,17 +343,17 @@ class NotificationManager extends Component
         $targets = [];
 
         if (is_string($this->activeTarget)) {
-            $targets[] = $this->getTarget($this->activeTarget);
+            $targets[$this->activeTarget] = $this->getTarget($this->activeTarget);
         } elseif (is_array($this->activeTarget)) {
             foreach ($this->activeTarget as $name) {
-                $targets[] = $this->getTarget($name);
+                $targets[$name] = $this->getTarget($name);
             }
         }
 
         $results = [];
 
-        foreach ($targets as $target) {
-            $results[$target] = call_user_func_array([$target, $method], $params);
+        foreach ($targets as $name => $target) {
+            $results[$name] = call_user_func_array([$target, $method], $params);
         }
 
         if (is_string($this->activeTarget)) {
