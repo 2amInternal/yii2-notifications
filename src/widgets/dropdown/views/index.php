@@ -21,7 +21,6 @@ $context = $this->context;
         <?php foreach ($items as $item): ?>
             <li class="<?= $item->isRead() ? "read" : ""; ?>">
                 <?= $context->renderNotificationText($item); ?>
-                <span class="timestamp"><?= $context->renderNotificationTimestamp($item); ?></span>
             </li>
         <?php endforeach; ?>
     </ul>

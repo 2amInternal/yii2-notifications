@@ -34,10 +34,28 @@ abstract class NotificationWidget extends \yii\base\Widget
      * {text} - only available when right side of notification type in manager is string
      * {text.key} - only available when right side of the notification type in manager is associative array.
      *              key represents the key of that array.
+     * {timestamp} - formatted timestamp
+     * {section.key} - renders a section from $sections list. Where key is section name.
+     * {notification.key} - renders a value from notification object directly. Key represents parameter from notification object.
      *
+     * @see NotificationWidget::$sections
      * @var string
      */
-    public $itemTemplate = '{text}';
+    public $itemTemplate = '{notification.type} at {timestamp}';
+
+    /**
+     * Rendering sections
+     *
+     * Should be in format:
+     * [
+     *     'key' => function(NotificationItem $item) {
+     *          return 'result';
+     *     }
+     * ]
+     *
+     * @var array
+     */
+    public $sections = [];
 
     /**
      * Timestamp format in Formatter format.
@@ -47,7 +65,7 @@ abstract class NotificationWidget extends \yii\base\Widget
     public $timestampFormat = 'php:m/d/Y H:i:s';
 
 
-    protected $compiledTemplate = null;
+    protected $templateReplacements = null;
 
     /**
      * @throws \yii\base\InvalidConfigException
@@ -57,30 +75,54 @@ abstract class NotificationWidget extends \yii\base\Widget
         parent::init();
 
         $this->manager = Instance::ensure($this->manager, NotificationManager::class);
-        $this->compileTemplate();
+        $this->compileTemplateReplacements();
     }
 
 
-    public function renderNotificationText(NotificationInterface $item)
+    public function renderNotificationText(NotificationInterface $notification)
     {
-        $data = ['text' => $item->getCompiledText()];
+        $context = $this->getNotificationContext($notification);
 
         $replacements = [];
-        foreach ($this->compiledTemplate as $item) {
-            $replacements["\{{$item}\}"] = ArrayHelper::getValue($data, $item);
+        foreach ($this->templateReplacements as $key => $item) {
+            if (is_string($item)) {
+                $replacements[$key] = ArrayHelper::getValue($context, $item);
+            } else if (is_callable($item)) {
+                $replacements[$key] = $item($notification, $this);
+            }
         }
+
+        $replacements['{timestamp}'] = Yii::$app->getFormatter()
+            ->asDatetime($notification->getTimestamp(), $this->timestampFormat);
 
         return strtr($this->itemTemplate, $replacements);
     }
 
-    public function renderNotificationTimestamp(NotificationInterface $notification)
+    protected function getNotificationContext(NotificationInterface $notification)
     {
-        return Yii::$app->getFormatter()->asDatetime($notification->getTimestamp(), $this->timestampFormat);
+        return [
+            'text' => $notification->getCompiledText(),
+            'notification' => $notification
+        ];
     }
 
-    protected function compileTemplate()
+    protected function compileTemplateReplacements()
     {
-        preg_match_all("/\{([^\}]+)\}/gi", $this->itemTemplate, $matches);
-        $this->compiledTemplate = $matches[1];
+        preg_match_all("/\{([^\}]+)\}/", $this->itemTemplate, $matches);
+
+        $context = [
+            'sections' => $this->sections
+        ];
+
+        $this->templateReplacements = [];
+        foreach ($matches[1] as $key) {
+            $section = ArrayHelper::getValue($context, $key);
+
+            if ($section !== null) {
+                $this->templateReplacements["{{$key}}"] = $section;
+            } else {
+                $this->templateReplacements["{{$key}}"] = $key;
+            }
+        }
     }
 }

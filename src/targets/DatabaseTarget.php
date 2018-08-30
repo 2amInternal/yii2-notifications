@@ -204,7 +204,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
             ->all($this->db);
 
         return array_map(function ($data) {
-            $this->createNotificationInstance($data);
+            return $this->createNotificationInstance($data);
         }, $items);
     }
 
