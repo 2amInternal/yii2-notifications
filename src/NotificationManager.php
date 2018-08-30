@@ -373,9 +373,26 @@ class NotificationManager extends Component
     protected function getTarget($targetName)
     {
         if (empty($this->targetObjects[$targetName])) {
-            $this->targetObjects[$targetName] = Instance::ensure($this->targets[$targetName], NotificationTargetInterface::class);
+            $this->targetObjects[$targetName] = $this->createTargetInstance($targetName);
         }
 
         return $this->targetObjects[$targetName];
+    }
+
+    /**
+     * Creates and returns notification target instance
+     *
+     * @param $targetName string Target name from which instance will be created.
+     * @return NotificationTargetInterface
+     * @throws \yii\base\InvalidConfigException
+     */
+    protected function createTargetInstance($targetName)
+    {
+        /** @var NotificationTargetInterface $target */
+        $target = Instance::ensure($this->targets[$targetName], NotificationTargetInterface::class);
+
+        $target->setOwner($this);
+
+        return $target;
     }
 }

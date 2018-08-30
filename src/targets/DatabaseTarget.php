@@ -264,7 +264,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         }
 
         /** @var Notification $model */
-        $model = Yii::createObject($this->dataClass);
+        $model = Instance::ensure($this->dataClass, Notification::class);
 
         $model->id = $data['id'];
         $model->type = $data['type'];
