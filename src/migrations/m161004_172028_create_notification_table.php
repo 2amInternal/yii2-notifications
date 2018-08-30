@@ -13,7 +13,7 @@ class m161004_172028_create_notification_table extends Migration
             'is_read' => $this->integer()->notNull()->defaultValue(0),
             'is_deleted' => $this->integer()->notNull()->defaultValue(0),
             'created_at' => $this->bigInteger()->notNull(),
-            'updated_at' => $this->bigInteger(),
+            'updated_at' => $this->bigInteger()->null(),
             'user_id' => $this->integer()
         ]);
 
