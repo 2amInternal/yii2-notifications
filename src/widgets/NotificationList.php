@@ -107,24 +107,16 @@ class NotificationList extends \yii\base\Widget
 
     public function run()
     {
-        $notifications = $this->manager->getNotifications($this->userId);
-
-        if (is_callable($this->containerTemplate)) {
-            return call_user_func_array($this->containerTemplate, [$notifications, $this]);
-        }
-
-        return strtr($this->containerTemplate, [
-            '{notifications}' => implode($this->listGlue, array_map(function (NotificationInterface $n) {
-                return $this->renderNotificationText($n);
-            }, $notifications))
-        ]);
+        return $this->renderNotifications($this->getNotifications());
     }
 
-    protected function renderContainerSections()
-    {
-
-    }
-
+    /**
+     * Renders notification text based on template.
+     *
+     * @param NotificationInterface $notification
+     * @return string
+     * @throws \yii\base\InvalidConfigException
+     */
     public function renderNotificationText(NotificationInterface $notification)
     {
         $context = $this->getNotificationContext($notification);
@@ -144,6 +136,12 @@ class NotificationList extends \yii\base\Widget
         return strtr($this->itemTemplate, $replacements);
     }
 
+    /**
+     * Returns context for rendering information about notification.
+     *
+     * @param NotificationInterface $notification
+     * @return array
+     */
     protected function getNotificationContext(NotificationInterface $notification)
     {
         return [
@@ -152,6 +150,9 @@ class NotificationList extends \yii\base\Widget
         ];
     }
 
+    /**
+     * Compile template replacements for use when rendering single notification
+     */
     protected function compileTemplateReplacements()
     {
         preg_match_all("/\{([^\}]+)\}/", $this->itemTemplate, $matches);
@@ -170,5 +171,34 @@ class NotificationList extends \yii\base\Widget
                 $this->templateReplacements["{{$key}}"] = $key;
             }
         }
+    }
+
+    /**
+     * Returns notifications
+     * @return NotificationInterface[]
+     * @throws \yii\base\InvalidConfigException
+     */
+    protected function getNotifications()
+    {
+        return $this->manager->getNotifications($this->userId);
+    }
+
+    /**
+     * Renders notifications
+     *
+     * @param $notifications
+     * @return mixed|string
+     */
+    protected function renderNotifications($notifications)
+    {
+        if (is_callable($this->containerTemplate)) {
+            return call_user_func_array($this->containerTemplate, [$notifications, $this]);
+        }
+
+        return strtr($this->containerTemplate, [
+            '{notifications}' => implode($this->listGlue, array_map(function (NotificationInterface $n) {
+                return $this->renderNotificationText($n);
+            }, $notifications))
+        ]);
     }
 }
