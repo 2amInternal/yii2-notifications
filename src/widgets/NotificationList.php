@@ -34,7 +34,9 @@ class NotificationList extends \yii\base\Widget
      * {notifications} - Lists all notifications in that place.
      * {emptyText} - Data which will be rendered if there are no notifications.
      *               If there are notification then this is replaced with empty string.
-     * {count} - Returns count of notifications
+     * {totalCount} - Returns total count of notifications
+     * {readCount} - Returns count of read notifications
+     * {unreadCount} - Returns count of read notifications
      * {section.key} - renders a section from $sections list. Where key is section name.
      *
      * If this is callable then this function will be called and it must return a string result.
@@ -208,12 +210,20 @@ class NotificationList extends \yii\base\Widget
 
         $templateReplacements = $this->compileTemplateReplacements($this->containerTemplate);
 
+        $totalCount = count($notifications);
+        $readCount = count(array_filter($notifications, function (NotificationInterface $n) {
+            return $n->isRead();
+        }));
+        $unreadCount = $totalCount - $readCount;
+
         $stringReplacements = [
             '{notifications}' => implode($this->listGlue, array_map(function (NotificationInterface $n) {
                 return $this->renderNotificationText($n);
             }, $notifications)),
-            '{emptyText}' => empty($notifications) ? $this->emptyText : '',
-            '{count}' => count($notifications),
+            '{emptyText}' => $totalCount == 0 ? $this->emptyText : '',
+            '{totalCount}' => $totalCount,
+            '{readCount}' => $readCount,
+            '{unreadCount}' => $unreadCount,
         ];
 
         return $this->renderTemplate([], $this->containerTemplate, $templateReplacements, $stringReplacements);
@@ -234,6 +244,6 @@ class NotificationList extends \yii\base\Widget
             $replacements[$key] = $item;
         }
 
-        return strtr($template, $stringReplacements);
+        return strtr($template, $replacements);
     }
 }

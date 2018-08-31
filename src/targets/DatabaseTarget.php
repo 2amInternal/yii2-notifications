@@ -39,6 +39,13 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     public $notificationsTable = '{{notification}}';
 
+    /**
+     * Order of the notifications when returning all notifications.
+     *
+     * @var array
+     */
+    public $notificationOrder = ['created_at' => SORT_DESC];
+
     /** @var NotificationManager */
     protected $owner;
 
@@ -199,17 +206,11 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     public function findNotifications($userId)
     {
-        $items = (new Query())
-            ->from($this->notificationsTable)
-            ->where([
-                'user_id' => $userId,
-                'is_deleted' => 0,
-            ])
-            ->all($this->db);
-
         return array_map(function ($data) {
+
             return $this->createNotificationInstance($data);
-        }, $items);
+
+        }, $this->getAllNotificationsQuery($userId)->all($this->db));
     }
 
     /**
@@ -242,13 +243,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     protected function findNotificationInstance($id, $userId)
     {
-        $data = (new Query())
-            ->from($this->notificationsTable)
-            ->where([
-                'id' => $id,
-                'user_id' => $userId,
-                'is_deleted' => 0
-            ])
+        $data = $this->getOneNotificationQuery($id, $userId)
             ->one($this->db);
 
         return $this->createNotificationInstance($data);
@@ -270,7 +265,10 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         /** @var Notification $model */
         $model = Instance::ensure($this->dataClass, Notification::class);
 
-        $model->setId($data['id']);
+        if (!empty($data['id'])) {
+            $model->setId($data['id']);
+        }
+
         $model->setType($data['type']);
         $model->setData(is_string($data['data']) ? Json::decode($data['data']) : $data['data']);
         $model->setUserId($data['user_id']);
@@ -301,5 +299,38 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
 
         $db->execute();
         $notification->setId($this->db->getLastInsertID());
+    }
+
+    /**
+     * Returns one notification query.
+     *
+     * @param $id int Notification ID
+     * @param $userId int User ID which will be used to ensure that notification belongs to that user.
+     *
+     * @return Query
+     */
+    protected function getOneNotificationQuery($id, $userId)
+    {
+        return $this->getAllNotificationsQuery($userId)->andWhere([
+            'id' => $id
+        ]);
+    }
+
+    /**
+     * Returns all notifications queery
+     *
+     * @param $userId int User ID which will be used as filter.
+     *
+     * @return Query
+     */
+    protected function getAllNotificationsQuery($userId)
+    {
+        return (new Query())
+            ->from($this->notificationsTable)
+            ->where([
+                'user_id' => $userId,
+                'is_deleted' => 0,
+            ])
+            ->orderBy($this->notificationOrder);
     }
 }
