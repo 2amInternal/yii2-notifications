@@ -13,7 +13,7 @@ use yii\helpers\ArrayHelper;
  * Company: 2amigOS!
  *
  **/
-abstract class NotificationWidget extends \yii\base\Widget
+class NotificationList extends \yii\base\Widget
 {
     /**
      * @var string|NotificationManager
@@ -26,6 +26,23 @@ abstract class NotificationWidget extends \yii\base\Widget
      * @var null|int
      */
     public $userId = null;
+
+    /**
+     * Container template for listing notifications.
+     *
+     * Available:
+     * {notifications} - Lists all notifications in that place.
+     *
+     * If this is callable then this function will be called and it must return a string result.
+     * Callback is in format:
+     * function($notifications, NotificationList $widget) {
+     *     return "Result."
+     * }
+     *
+     *
+     * @var string|callable
+     */
+    public $containerTemplate = "{notifications}";
 
     /**
      * Item template
@@ -65,6 +82,14 @@ abstract class NotificationWidget extends \yii\base\Widget
     public $timestampFormat = 'php:m/d/Y H:i:s';
 
 
+    /**
+     * Glue for joining notifications when rendering
+     *
+     * @var string
+     */
+    public $listGlue = PHP_EOL;
+
+
     protected $templateReplacements = null;
 
     /**
@@ -78,6 +103,26 @@ abstract class NotificationWidget extends \yii\base\Widget
         $this->compileTemplateReplacements();
     }
 
+
+    public function run()
+    {
+        $notifications = $this->manager->getNotifications($this->userId);
+
+        if (is_callable($this->containerTemplate)) {
+            return call_user_func_array($this->containerTemplate, [$notifications, $this]);
+        }
+
+        return strtr($this->containerTemplate, [
+            '{notifications}' => implode($this->listGlue, array_map(function (NotificationInterface $n) {
+                return $this->renderNotificationText($n);
+            }, $notifications))
+        ]);
+    }
+
+    protected function renderContainerSections()
+    {
+
+    }
 
     public function renderNotificationText(NotificationInterface $notification)
     {
