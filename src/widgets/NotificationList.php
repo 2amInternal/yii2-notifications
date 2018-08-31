@@ -32,6 +32,8 @@ class NotificationList extends \yii\base\Widget
      *
      * Available:
      * {notifications} - Lists all notifications in that place.
+     * {emptyText} - Data which will be rendered if there are no notifications.
+     *               If there are notification then this is replaced with empty string.
      *
      * If this is callable then this function will be called and it must return a string result.
      * This result will not be processed for template strings.
@@ -43,7 +45,7 @@ class NotificationList extends \yii\base\Widget
      *
      * @var string|callable
      */
-    public $containerTemplate = "{notifications}";
+    public $containerTemplate = "{notifications}{emptyText}";
 
     /**
      * Item template
@@ -89,6 +91,13 @@ class NotificationList extends \yii\base\Widget
      * @var string
      */
     public $listGlue = PHP_EOL;
+
+    /**
+     * Text which will be rendered if there are no notifications present.
+     *
+     * @var string
+     */
+    public $emptyText = 'No notifications available.';
 
 
     protected $templateReplacements = null;
@@ -198,7 +207,8 @@ class NotificationList extends \yii\base\Widget
         return strtr($this->containerTemplate, [
             '{notifications}' => implode($this->listGlue, array_map(function (NotificationInterface $n) {
                 return $this->renderNotificationText($n);
-            }, $notifications))
+            }, $notifications)),
+            '{emptyText}' => empty($notifications) ? $this->emptyText : ''
         ]);
     }
 }

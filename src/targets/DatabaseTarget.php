@@ -107,7 +107,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
 
         return $notification;
     }
-    
+
     /**
      * Marks notification as read.
      *
