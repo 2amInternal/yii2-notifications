@@ -34,11 +34,12 @@ class NotificationList extends \yii\base\Widget
      * {notifications} - Lists all notifications in that place.
      *
      * If this is callable then this function will be called and it must return a string result.
+     * This result will not be processed for template strings.
+     *
      * Callback is in format:
      * function($notifications, NotificationList $widget) {
-     *     return "Result."
+     *     return "Result.";
      * }
-     *
      *
      * @var string|callable
      */
