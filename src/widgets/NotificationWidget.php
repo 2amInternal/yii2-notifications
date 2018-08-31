@@ -111,7 +111,7 @@ abstract class NotificationWidget extends \yii\base\Widget
         preg_match_all("/\{([^\}]+)\}/", $this->itemTemplate, $matches);
 
         $context = [
-            'sections' => $this->sections
+            'section' => $this->sections
         ];
 
         $this->templateReplacements = [];
