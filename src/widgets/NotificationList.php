@@ -62,8 +62,16 @@ class NotificationList extends \yii\base\Widget
      * {section.key} - renders a section from $sections list. Where key is section name.
      * {notification.key} - renders a value from notification object directly. Key represents parameter from notification object.
      *
+     * If this is callable then this function will be called and it must return a string result.
+     * This result will not be processed for template strings.
+     *
+     * Callback is in format:
+     * function(NotificationInterface $notification, NotificationList $widget) {
+     *     return "Result.";
+     * }
+     *
      * @see NotificationWidget::$sections
-     * @var string
+     * @var string|callable
      */
     public $itemTemplate = '{notification.type} at {timestamp}';
 
@@ -129,8 +137,12 @@ class NotificationList extends \yii\base\Widget
      * @return string
      * @throws \yii\base\InvalidConfigException
      */
-    public function renderNotificationText(NotificationInterface $notification)
+    public function renderNotification(NotificationInterface $notification)
     {
+        if (is_callable($this->itemTemplate)) {
+            return call_user_func_array($this->itemTemplate, [$notification, $this]);
+        }
+
         $context = $this->getNotificationContext($notification);
 
         $stringReplacements = [
@@ -218,7 +230,7 @@ class NotificationList extends \yii\base\Widget
 
         $stringReplacements = [
             '{notifications}' => implode($this->listGlue, array_map(function (NotificationInterface $n) {
-                return $this->renderNotificationText($n);
+                return $this->renderNotification($n);
             }, $notifications)),
             '{emptyText}' => $totalCount == 0 ? $this->emptyText : '',
             '{totalCount}' => $totalCount,
