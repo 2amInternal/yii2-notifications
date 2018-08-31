@@ -107,26 +107,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
 
         return $notification;
     }
-
-    /**
-     * Replaces notification ID with new notification ID.
-     *
-     * @param $id int ID of the notification to be replaced.
-     * @param $type string Notification type
-     * @param $data array Additional data for this notification.
-     * @param $userId int User ID for which this notification relates to.
-     *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
-     * @throws Exception
-     *
-     * @return NotificationInterface
-     */
-    public function replace($id, $type, $data, $userId)
-    {
-        $this->markAsDeleted($id, $userId);
-        return $this->create($type, $data, $userId);
-    }
-
+    
     /**
      * Marks notification as read.
      *
