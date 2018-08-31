@@ -34,6 +34,8 @@ class NotificationList extends \yii\base\Widget
      * {notifications} - Lists all notifications in that place.
      * {emptyText} - Data which will be rendered if there are no notifications.
      *               If there are notification then this is replaced with empty string.
+     * {count} - Returns count of notifications
+     * {section.key} - renders a section from $sections list. Where key is section name.
      *
      * If this is callable then this function will be called and it must return a string result.
      * This result will not be processed for template strings.
@@ -100,7 +102,7 @@ class NotificationList extends \yii\base\Widget
     public $emptyText = 'No notifications available.';
 
 
-    protected $templateReplacements = null;
+    protected $itemTemplateReplacements = null;
 
     /**
      * @throws \yii\base\InvalidConfigException
@@ -110,7 +112,6 @@ class NotificationList extends \yii\base\Widget
         parent::init();
 
         $this->manager = Instance::ensure($this->manager, NotificationManager::class);
-        $this->compileTemplateReplacements();
     }
 
 
@@ -130,19 +131,16 @@ class NotificationList extends \yii\base\Widget
     {
         $context = $this->getNotificationContext($notification);
 
-        $replacements = [];
-        foreach ($this->templateReplacements as $key => $item) {
-            if (is_string($item)) {
-                $replacements[$key] = ArrayHelper::getValue($context, $item);
-            } else if (is_callable($item)) {
-                $replacements[$key] = $item($notification, $this);
-            }
-        }
+        $stringReplacements = [
+            '{timestamp}' => Yii::$app->formatter->asDate($notification->getTimestamp(), $this->timestampFormat)
+        ];
 
-        $replacements['{timestamp}'] = Yii::$app->getFormatter()
-            ->asDatetime($notification->getTimestamp(), $this->timestampFormat);
-
-        return strtr($this->itemTemplate, $replacements);
+        return $this->renderTemplate(
+            $context,
+            $this->itemTemplate,
+            $this->itemTemplateReplacements,
+            $stringReplacements
+        );
     }
 
     /**
@@ -162,24 +160,26 @@ class NotificationList extends \yii\base\Widget
     /**
      * Compile template replacements for use when rendering single notification
      */
-    protected function compileTemplateReplacements()
+    protected function compileTemplateReplacements($template)
     {
-        preg_match_all("/\{([^\}]+)\}/", $this->itemTemplate, $matches);
+        preg_match_all("/\{([^\}]+)\}/", $template, $matches);
 
         $context = [
             'section' => $this->sections
         ];
 
-        $this->templateReplacements = [];
+        $replacements = [];
         foreach ($matches[1] as $key) {
             $section = ArrayHelper::getValue($context, $key);
 
             if ($section !== null) {
-                $this->templateReplacements["{{$key}}"] = $section;
+                $replacements["{{$key}}"] = $section;
             } else {
-                $this->templateReplacements["{{$key}}"] = $key;
+                $replacements["{{$key}}"] = $key;
             }
         }
+
+        return $replacements;
     }
 
     /**
@@ -200,15 +200,35 @@ class NotificationList extends \yii\base\Widget
      */
     protected function renderNotifications($notifications)
     {
+        $this->itemTemplateReplacements = $this->compileTemplateReplacements($this->itemTemplate);
+
         if (is_callable($this->containerTemplate)) {
             return call_user_func_array($this->containerTemplate, [$notifications, $this]);
         }
 
-        return strtr($this->containerTemplate, [
+        $templateReplacements = $this->compileTemplateReplacements($this->containerTemplate);
+
+        $stringReplacements = [
             '{notifications}' => implode($this->listGlue, array_map(function (NotificationInterface $n) {
                 return $this->renderNotificationText($n);
             }, $notifications)),
-            '{emptyText}' => empty($notifications) ? $this->emptyText : ''
-        ]);
+            '{emptyText}' => empty($notifications) ? $this->emptyText : '',
+            '{count}' => count($notifications),
+        ];
+
+        return $this->renderTemplate([], $this->containerTemplate, $templateReplacements, $stringReplacements);
+    }
+
+    protected function renderTemplate($context, $template, $templateReplacements, $stringReplacements = [])
+    {
+        foreach ($templateReplacements as $key => $item) {
+            if (is_string($item)) {
+                $stringReplacements[$key] = ArrayHelper::getValue($context, $item);
+            } else if (is_callable($item)) {
+                $stringReplacements[$key] = $item($context, $this);
+            }
+        }
+
+        return strtr($template, $stringReplacements);
     }
 }
