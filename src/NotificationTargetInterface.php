@@ -56,6 +56,16 @@ interface NotificationTargetInterface
     public function markAsRead($id, $userId);
 
     /**
+     * Marks notification as unread.
+     *
+     * @param $id int ID of the notification which will be marked as read.
+     * @param $userId int User to be used.
+     *
+     * @throws SaveFailedException Throws exception if storage could not save this notification.
+     */
+    public function markAsUnread($id, $userId);
+
+    /**
      * Marks notification as deleted.
      *
      * @param $id int ID of the notification to be marked.
@@ -64,6 +74,16 @@ interface NotificationTargetInterface
      * @throws SaveFailedException Throws exception if storage could not save this notification.
      */
     public function markAsDeleted($id, $userId);
+
+    /**
+     * Marks notification as not deleted.
+     *
+     * @param $id int ID of the notification to be marked.
+     * @param $userId int User to be used. If null it refers to current user.
+     *
+     * @throws SaveFailedException Throws exception if storage could not save this notification.
+     */
+    public function markAsNotDeleted($id, $userId);
 
     /**
      * Removes all notifications for specified user.

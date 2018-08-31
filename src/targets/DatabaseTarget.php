@@ -125,15 +125,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     public function markAsRead($id, $userId)
     {
-        $this->db->createCommand()
-            ->update($this->notificationsTable, [
-                'is_read' => 1,
-                'updated_at' => time()
-            ], [
-                'user_id' => $userId,
-                'id' => $id
-            ])
-            ->execute();
+        $this->markRead($id, $userId, 1);
     }
 
     /**
@@ -147,15 +139,35 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     public function markAsDeleted($id, $userId)
     {
-        $this->db->createCommand()
-            ->update($this->notificationsTable, [
-                'is_deleted' => 1,
-                'updated_at' => time()
-            ], [
-                'user_id' => $userId,
-                'id' => $id
-            ])
-            ->execute();
+        $this->markDeleted($id, $userId, 1);
+    }
+
+    /**
+     * Marks notification as unread.
+     *
+     * @param $id int ID of the notification which will be marked as read.
+     * @param $userId int User to be used.
+     *
+     * @throws SaveFailedException Throws exception if storage could not save this notification.
+     * @throws \yii\db\Exception
+     */
+    public function markAsUnread($id, $userId)
+    {
+        $this->markRead($id, $userId, 0);
+    }
+
+    /**
+     * Marks notification as not deleted.
+     *
+     * @param $id int ID of the notification to be marked.
+     * @param $userId int User to be used. If null it refers to current user.
+     *
+     * @throws SaveFailedException Throws exception if storage could not save this notification.
+     * @throws \yii\db\Exception
+     */
+    public function markAsNotDeleted($id, $userId)
+    {
+        $this->markDeleted($id, $userId, 0);
     }
 
     /**
@@ -332,5 +344,49 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
                 'is_deleted' => 0,
             ])
             ->orderBy($this->notificationOrder);
+    }
+
+    /**
+     * Mark notification as read or unread.
+     *
+     * @param $id int Notification ID
+     * @param $userId int Notification User ID
+     * @param $isDeleted int Is deleted
+     *
+     * @throws \yii\db\Exception
+     */
+    protected function markRead($id, $userId, $isRead)
+    {
+        $this->db->createCommand()
+            ->update($this->notificationsTable, [
+                'is_read' => $isRead,
+                'updated_at' => time()
+            ], [
+                'user_id' => $userId,
+                'id' => $id
+            ])
+            ->execute();
+    }
+
+    /**
+     * Mark notification as deleted or not deleted.
+     *
+     * @param $id int Notification ID
+     * @param $userId int Notification User ID
+     * @param $isDeleted int Is deleted
+     *
+     * @throws \yii\db\Exception
+     */
+    protected function markDeleted($id, $userId, $isDeleted)
+    {
+        $this->db->createCommand()
+            ->update($this->notificationsTable, [
+                'is_deleted' => $isDeleted,
+                'updated_at' => time()
+            ], [
+                'user_id' => $userId,
+                'id' => $id
+            ])
+            ->execute();
     }
 }
