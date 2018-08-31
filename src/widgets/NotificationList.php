@@ -143,18 +143,7 @@ class NotificationList extends \yii\base\Widget
             return call_user_func_array($this->itemTemplate, [$notification, $this]);
         }
 
-        $context = $this->getNotificationContext($notification);
-
-        $stringReplacements = [
-            '{timestamp}' => Yii::$app->formatter->asDate($notification->getTimestamp(), $this->timestampFormat)
-        ];
-
-        return $this->renderTemplate(
-            $context,
-            $this->itemTemplate,
-            $this->itemTemplateReplacements,
-            $stringReplacements
-        );
+        return $this->renderNotificationTemplate($notification);
     }
 
     /**
@@ -214,12 +203,39 @@ class NotificationList extends \yii\base\Widget
      */
     protected function renderNotifications($notifications)
     {
-        $this->itemTemplateReplacements = $this->compileTemplateReplacements($this->itemTemplate);
+        if (!is_callable($this->itemTemplate)) {
+            $this->itemTemplateReplacements = $this->compileTemplateReplacements($this->itemTemplate);
+        } else {
+            $this->itemTemplateReplacements = [];
+        }
 
         if (is_callable($this->containerTemplate)) {
             return call_user_func_array($this->containerTemplate, [$notifications, $this]);
         }
 
+        return $this->renderContainerTemplate($notifications);
+    }
+
+    protected function renderTemplate($context, $template, $templateReplacements, $stringReplacements = [])
+    {
+        $replacements = [];
+        foreach ($templateReplacements as $key => $item) {
+            if (is_string($item)) {
+                $replacements[$key] = ArrayHelper::getValue($context, $item);
+            } else if (is_callable($item)) {
+                $replacements[$key] = $item($context, $this);
+            }
+        }
+
+        foreach ($stringReplacements as $key => $item) {
+            $replacements[$key] = $item;
+        }
+
+        return strtr($template, $replacements);
+    }
+
+    protected function renderContainerTemplate($notifications): string
+    {
         $templateReplacements = $this->compileTemplateReplacements($this->containerTemplate);
 
         $totalCount = count($notifications);
@@ -241,21 +257,19 @@ class NotificationList extends \yii\base\Widget
         return $this->renderTemplate([], $this->containerTemplate, $templateReplacements, $stringReplacements);
     }
 
-    protected function renderTemplate($context, $template, $templateReplacements, $stringReplacements = [])
+    protected function renderNotificationTemplate(NotificationInterface $notification): string
     {
-        $replacements = [];
-        foreach ($templateReplacements as $key => $item) {
-            if (is_string($item)) {
-                $replacements[$key] = ArrayHelper::getValue($context, $item);
-            } else if (is_callable($item)) {
-                $replacements[$key] = $item($context, $this);
-            }
-        }
+        $context = $this->getNotificationContext($notification);
 
-        foreach ($stringReplacements as $key => $item) {
-            $replacements[$key] = $item;
-        }
+        $stringReplacements = [
+            '{timestamp}' => Yii::$app->formatter->asDate($notification->getTimestamp(), $this->timestampFormat)
+        ];
 
-        return strtr($template, $replacements);
+        return $this->renderTemplate(
+            $context,
+            $this->itemTemplate,
+            $this->itemTemplateReplacements,
+            $stringReplacements
+        );
     }
 }
