@@ -221,12 +221,17 @@ class NotificationList extends \yii\base\Widget
 
     protected function renderTemplate($context, $template, $templateReplacements, $stringReplacements = [])
     {
+        $replacements = [];
         foreach ($templateReplacements as $key => $item) {
             if (is_string($item)) {
-                $stringReplacements[$key] = ArrayHelper::getValue($context, $item);
+                $replacements[$key] = ArrayHelper::getValue($context, $item);
             } else if (is_callable($item)) {
-                $stringReplacements[$key] = $item($context, $this);
+                $replacements[$key] = $item($context, $this);
             }
+        }
+
+        foreach ($stringReplacements as $key => $item) {
+            $replacements[$key] = $item;
         }
 
         return strtr($template, $stringReplacements);
