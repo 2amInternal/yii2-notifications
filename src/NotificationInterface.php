@@ -31,11 +31,21 @@ interface NotificationInterface
     public function getId();
 
     /**
+     * Sets notification ID
+     */
+    public function setId($id);
+
+    /**
      * Returns type of this notification.
      *
      * @return string
      */
     public function getType();
+
+    /**
+     * Sets type of this notification.
+     */
+    public function setType($type);
 
     /**
      * Returns data for this notification. Which will be used when displaying notification info.
@@ -48,11 +58,26 @@ interface NotificationInterface
     public function getData();
 
     /**
+     * Sets data for this notification. Which will be used when displaying notification info.
+     *
+     * @param $data array Data which will be set
+     */
+    public function setData($data);
+
+    /**
      * Returns timestamp of this notification.
      *
      * @return string
      */
     public function getTimestamp();
+
+
+    /**
+     * Sets timestamp of this notification
+     *
+     * @param $timestamp int UNIX timestamp
+     */
+    public function setTimestamp($timestamp);
 
     /**
      * Returns whether or not notification is read.
@@ -61,6 +86,13 @@ interface NotificationInterface
      */
     public function isRead();
 
+    /**
+     * Sets if this notification is read.
+     *
+     * @param $isRead bool
+     */
+    public function setRead($isRead);
+
 
     /**
      * Returns user which owns this notification
@@ -68,4 +100,11 @@ interface NotificationInterface
      * @return int
      */
     public function getUserId();
+
+    /**
+     * Sets user id.
+     *
+     * @param $userId int User ID
+     */
+    public function setUserId($userId);
 }

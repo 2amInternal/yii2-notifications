@@ -32,6 +32,19 @@ interface NotificationTargetInterface
     public function create($type, $data, $userId);
 
     /**
+     * Updates existing notification in the storage for specified user.
+     *
+     * @param $type string Notification type
+     * @param $data array Additional data for this notification.
+     * @param $userId int User ID for which this notification relates to.
+     *
+     * @throws SaveFailedException Throws exception if storage could not save this notification.
+     *
+     * @return NotificationInterface Instance of new notification.
+     */
+    public function update($id, $type, $data, $userId);
+
+    /**
      * Replaces notification ID with new notification ID.
      *
      * @param $id int ID of the notification to be replaced.

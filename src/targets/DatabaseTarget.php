@@ -79,10 +79,33 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
             'is_read' => 0
         ];
 
-        $this->db->createCommand()->insert($this->notificationsTable, $data)->execute();
-        $data['id'] = $this->db->getLastInsertID();
+        $notification = $this->createNotificationInstance($data);
+        $this->saveNotification($notification);
+        return $notification;
+    }
 
-        return $this->createNotificationInstance($data);
+
+    /**
+     * Updates existing notification in the storage for specified user.
+     *
+     * @param $id int Notification ID
+     * @param $type string Notification type
+     * @param $data array Additional data for this notification.
+     * @param $userId int User ID for which this notification relates to.
+     *
+     * @throws SaveFailedException Throws exception if storage could not save this notification.
+     * @throws Exception
+     *
+     * @return NotificationInterface Instance of new notification.
+     */
+    public function update($id, $type, $data, $userId)
+    {
+        $notification = $this->findNotification($id, $userId);
+        $notification->setType($type);
+        $notification->setData($data);
+        $this->saveNotification($notification);
+
+        return $notification;
     }
 
     /**
@@ -266,14 +289,36 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         /** @var Notification $model */
         $model = Instance::ensure($this->dataClass, Notification::class);
 
-        $model->id = $data['id'];
-        $model->type = $data['type'];
-        $model->data = is_string($data['data']) ? Json::decode($data['data']) : $data['data'];
-        $model->userId = $data['user_id'];
-        $model->timestamp = $data['created_at'];
-        $model->isRead = (bool)$data['is_read'];
-        $model->owner = $this->owner;
+        $model->setId($data['id']);
+        $model->setType($data['type']);
+        $model->setData(is_string($data['data']) ? Json::decode($data['data']) : $data['data']);
+        $model->setUserId($data['user_id']);
+        $model->setTimestamp($data['created_at']);
+        $model->setRead((bool)$data['is_read']);
+        $model->setOwner($this->owner);
 
         return $model;
+    }
+
+    protected function saveNotification(Notification $notification)
+    {
+        $data = [
+            'type' => $notification->getType(),
+            'data' => Json::encode($notification->getData()),
+            'user_id' => $notification->getUserId(),
+            'created_at' => $notification->getTimestamp(),
+            'is_read' => (int)$notification->isRead()
+        ];
+
+        $db = $this->db->createCommand();
+
+        if ($notification->getId() !== null) {
+            $db->update($this->notificationsTable, $data, ['id' => $notification->getId()]);
+        } else {
+            $db->insert($this->notificationsTable, $data);
+        }
+
+        $db->execute();
+        $notification->setId($this->db->getLastInsertID());
     }
 }

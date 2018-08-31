@@ -80,6 +80,16 @@ class Notification extends BaseObject implements NotificationInterface
     }
 
     /**
+     * Sets current notification ID.
+     *
+     * @param $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    /**
      * Returns type of this notification.
      *
      * @return string
@@ -130,5 +140,53 @@ class Notification extends BaseObject implements NotificationInterface
     public function getUserId()
     {
         return $this->userId;
+    }
+
+    /**
+     * Sets type of this notification.
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * Sets data for this notification. Which will be used when displaying notification info.
+     *
+     * @param $data array Data which will be set
+     */
+    public function setData($data)
+    {
+        $this->data = $data;
+    }
+
+    /**
+     * Sets timestamp of this notification
+     *
+     * @param $timestamp int UNIX timestamp
+     */
+    public function setTimestamp($timestamp)
+    {
+        $this->timestamp = $timestamp;
+    }
+
+    /**
+     * Sets if this notification is read.
+     *
+     * @param $isRead bool
+     */
+    public function setRead($isRead)
+    {
+        $this->isRead = $isRead;
+    }
+
+    /**
+     * Sets user id.
+     *
+     * @param $userId int User ID
+     */
+    public function setUserId($userId)
+    {
+        $this->userId = $userId;
     }
 }
