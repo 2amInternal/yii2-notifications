@@ -9,10 +9,10 @@ namespace dvamigos\Yii2\Notifications\events;
 
 use yii\base\Event;
 
-class UpdateNotification extends EventNotification
+class ReplaceNotification extends EventNotification
 {
     /**
-     * ID of the notification which will be updated.
+     * ID of the notification which will be replaced.
      *
      * If value is numeric then that value will be used.
      *
@@ -25,7 +25,7 @@ class UpdateNotification extends EventNotification
      *
      * @var callable|int
      */
-    public $updateId;
+    public $replaceId;
 
     /**
      * Replaces existing notification using notification manager.
@@ -38,7 +38,7 @@ class UpdateNotification extends EventNotification
      */
     public function resolve(Event $event, $type, $data)
     {
-        $id = is_callable($this->updateId) ? call_user_func($this->updateId, $this) : $this->updateId;
-        $this->getManager()->update($id, $type, $data);
+        $id = is_callable($this->replaceId) ? call_user_func($this->replaceId, $this) : $this->replaceId;
+        $this->getManager()->replace($id, $type, $data);
     }
 }
