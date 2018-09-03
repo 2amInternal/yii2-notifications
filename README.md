@@ -160,7 +160,7 @@ class MyNotification extends \dvamigos\Yii2\Notifications\events\PushNotificatio
         parent::init();
     }
     
-    public function handleMyData()
+    public function handleMyData(MyNotification $instance, \yii\base\Event $event)
     {
         // You logic for returning data here...
     }
