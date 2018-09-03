@@ -7,12 +7,11 @@
 
 namespace dvamigos\Yii2\Notifications\targets;
 
-use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
+use dvamigos\Yii2\Notifications\exceptions\NotificationNotFoundException;
 use dvamigos\Yii2\Notifications\Notification;
 use dvamigos\Yii2\Notifications\NotificationManager;
 use dvamigos\Yii2\Notifications\NotificationInterface;
 use dvamigos\Yii2\Notifications\NotificationTargetInterface;
-use Yii;
 use yii\base\BaseObject;
 use yii\base\Exception;
 use yii\db\Connection;
@@ -70,8 +69,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $data array Additional data for this notification.
      * @param $userId int User ID for which this notification relates to.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
-     * @throws \yii\db\Exception
      * @throws \yii\base\InvalidConfigException
      *
      * @return NotificationInterface Instance of this notification.
@@ -100,7 +97,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $data array Additional data for this notification.
      * @param $userId int User ID for which this notification relates to.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      * @throws Exception
      *
      * @return NotificationInterface Instance of new notification.
@@ -134,7 +130,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $id int ID of the notification to be marked.
      * @param $userId int User to be used. If null it refers to current user.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      * @throws Exception
      */
     public function markAsDeleted($id, $userId)
@@ -148,7 +143,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $id int ID of the notification which will be marked as read.
      * @param $userId int User to be used.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      * @throws \yii\db\Exception
      */
     public function markAsUnread($id, $userId)
@@ -162,7 +156,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $id int ID of the notification to be marked.
      * @param $userId int User to be used. If null it refers to current user.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      * @throws \yii\db\Exception
      */
     public function markAsNotDeleted($id, $userId)
@@ -175,7 +168,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      *
      * @param $userId int User for which notifications will be cleared.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      * @throws \yii\db\Exception
      */
     public function clearAll($userId)
@@ -195,7 +187,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * Marks all notifications as read for specified user.
      *
      * @param $userId int User for which notifications will be marked as read.
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      * @throws \yii\db\Exception
      */
     public function markAllRead($userId)
@@ -231,14 +222,15 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $id int Notification ID
      * @param $userId int Notification User ID
      * @return Notification
-     * @throws Exception
+     * @throws NotificationNotFoundException
+     * @throws \yii\base\InvalidConfigException
      */
-    protected function findNotification($id, $userId)
+    public function findNotification($id, $userId)
     {
         $model = $this->findNotificationInstance($id, $userId);
 
         if (empty($model)) {
-            throw new Exception(Yii::t('app', 'Notification ID to be replaced not found.'));
+            throw new NotificationNotFoundException($id, $userId);
         }
 
         return $model;
@@ -251,7 +243,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @param $userId int Notification User ID
      * @return Notification|null
      * @throws \yii\base\InvalidConfigException
-     * @throws \yii\db\Exception
      */
     protected function findNotificationInstance($id, $userId)
     {
@@ -329,7 +320,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
     }
 
     /**
-     * Returns all notifications queery
+     * Returns all notifications query
      *
      * @param $userId int User ID which will be used as filter.
      *
@@ -351,8 +342,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      *
      * @param $id int Notification ID
      * @param $userId int Notification User ID
-     * @param $isDeleted int Is deleted
-     *
+     * @param $isRead
      * @throws \yii\db\Exception
      */
     protected function markRead($id, $userId, $isRead)

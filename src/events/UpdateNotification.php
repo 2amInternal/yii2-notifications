@@ -7,12 +7,9 @@
 
 namespace dvamigos\Yii2\Notifications\events;
 
-use dvamigos\Yii2\Notifications\NotificationManager;
-use Yii;
 use yii\base\Event;
-use yii\di\Instance;
 
-class ReplaceNotification extends EventNotification
+class UpdateNotification extends EventNotification
 {
     /**
      * ID of the notification which will be replaced.
@@ -36,13 +33,12 @@ class ReplaceNotification extends EventNotification
      * @param \yii\base\Event $event
      * @param $type
      * @param $data
-     * @throws \dvamigos\Yii2\Notifications\exceptions\SaveFailedException
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      */
     public function resolve(Event $event, $type, $data)
     {
         $id = is_callable($this->replaceId) ? call_user_func($this->replaceId, $this) : $this->replaceId;
-        $this->getManager()->replace($id, $type, $data);
+        $this->getManager()->update($id, $type, $data);
     }
 }

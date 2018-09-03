@@ -7,7 +7,7 @@
 
 namespace dvamigos\Yii2\Notifications;
 
-use dvamigos\Yii2\Notifications\exceptions\SaveFailedException;
+use dvamigos\Yii2\Notifications\exceptions\NotificationNotFoundException;
 
 interface NotificationTargetInterface
 {
@@ -25,7 +25,6 @@ interface NotificationTargetInterface
      * @param $data array Additional data for this notification.
      * @param $userId int User ID for which this notification relates to.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      *
      * @return NotificationInterface Instance of new notification.
      */
@@ -34,11 +33,10 @@ interface NotificationTargetInterface
     /**
      * Updates existing notification in the storage for specified user.
      *
+     * @param $id int
      * @param $type string Notification type
      * @param $data array Additional data for this notification.
      * @param $userId int User ID for which this notification relates to.
-     *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      *
      * @return NotificationInterface Instance of new notification.
      */
@@ -51,7 +49,6 @@ interface NotificationTargetInterface
      * @param $id int ID of the notification which will be marked as read.
      * @param $userId int User to be used.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      */
     public function markAsRead($id, $userId);
 
@@ -61,7 +58,6 @@ interface NotificationTargetInterface
      * @param $id int ID of the notification which will be marked as read.
      * @param $userId int User to be used.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      */
     public function markAsUnread($id, $userId);
 
@@ -71,7 +67,6 @@ interface NotificationTargetInterface
      * @param $id int ID of the notification to be marked.
      * @param $userId int User to be used. If null it refers to current user.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      */
     public function markAsDeleted($id, $userId);
 
@@ -81,7 +76,6 @@ interface NotificationTargetInterface
      * @param $id int ID of the notification to be marked.
      * @param $userId int User to be used. If null it refers to current user.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      */
     public function markAsNotDeleted($id, $userId);
 
@@ -90,7 +84,6 @@ interface NotificationTargetInterface
      *
      * @param $userId int User for which notifications will be cleared.
      *
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      */
     public function clearAll($userId);
 
@@ -98,7 +91,6 @@ interface NotificationTargetInterface
      * Marks all notifications as read for specified user.
      *
      * @param $userId int User for which notifications will be marked as read.
-     * @throws SaveFailedException Throws exception if storage could not save this notification.
      */
     public function markAllRead($userId);
 
@@ -109,4 +101,14 @@ interface NotificationTargetInterface
      * @return NotificationInterface[] List of notifications
      */
     public function findNotifications($userId);
+
+    /**
+     * Finds one notification.
+     *
+     * @param $id int Notification ID
+     * @param $userId int Notification User ID
+     * @return NotificationInterface
+     * @throws NotificationNotFoundException
+     */
+    public function findNotification($id, $userId);
 }

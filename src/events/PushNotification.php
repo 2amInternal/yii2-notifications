@@ -7,10 +7,6 @@
 
 namespace dvamigos\Yii2\Notifications\events;
 
-use dvamigos\Yii2\Notifications\NotificationManager;
-use Yii;
-use yii\di\Instance;
-
 class PushNotification extends EventNotification
 {
     /**
@@ -19,7 +15,6 @@ class PushNotification extends EventNotification
      * @param \yii\base\Event $event
      * @param $type
      * @param $data
-     * @throws \dvamigos\Yii2\Notifications\exceptions\SaveFailedException
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      */

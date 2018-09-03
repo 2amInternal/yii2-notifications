@@ -175,7 +175,6 @@ class NotificationManager extends Component
      * @param $userId integer|null For which user this will be applied. If null current user is used.
      * @return NotificationInterface
      * @throws Exception
-     * @throws exceptions\SaveFailedException
      */
     public function push($type, $data = [], $userId = null)
     {
@@ -184,34 +183,33 @@ class NotificationManager extends Component
     }
 
     /**
-     * Replaces old notification with newly defined notification.
+     * Updates notification with newly defined data.
      *
-     * @param $id integer notification which will be replaced
+     * @param $id integer notification which will be updated
      * @param $type string one of the types defined in $types
      * @param array $data string translation data which will be applied when the notification is rendered.
      * @param $userId integer|null For which user this will be applied. If null current user is used.
      * @return NotificationInterface
-     * @throws exceptions\SaveFailedException
      * @throws \yii\base\InvalidConfigException
      * @throws Exception
      */
-    public function replace($id, $type, $data = [], $userId = null)
+    public function update($id, $type, $data = [], $userId = null)
     {
         $this->validateType($type);
-        return $this->callTarget('replace', [$id, $type, $data, $this->resolveUserId($userId)]);
+        return $this->callTarget('update', [$id, $type, $data, $this->resolveUserId($userId)]);
     }
 
     /**
      * Marks notification as read
      *
      * @param $id integer notification which will be marked
+     * @param $userId int|null
      * @return bool Whether or not operation is successful.
-     * @throws exceptions\SaveFailedException
      * @throws \yii\base\InvalidConfigException
      */
     public function markAsRead($id, $userId = null)
     {
-        return $this->callTarget('markAsDeleted', [$id, $this->resolveUserId($userId)]);
+        return $this->callTarget('markAsRead', [$id, $this->resolveUserId($userId)]);
     }
 
 
@@ -220,7 +218,6 @@ class NotificationManager extends Component
      *
      * @param int|null $userId User ID which will be used. Current User if null.
      * @return mixed
-     * @throws exceptions\SaveFailedException
      * @throws \yii\base\InvalidConfigException
      */
     public function markAllRead($userId = null)
@@ -232,8 +229,8 @@ class NotificationManager extends Component
      * Deletes notification
      *
      * @param $id integer notification which will be marked
+     * @param null $userId
      * @return bool Whether or not operation is successful.
-     * @throws exceptions\SaveFailedException
      * @throws \yii\base\InvalidConfigException
      */
     public function delete($id, $userId = null)
@@ -246,7 +243,6 @@ class NotificationManager extends Component
      *
      * @param $userId integer|null For which user this will be applied. If null current user is used.
      * @return bool
-     * @throws exceptions\SaveFailedException
      * @throws \yii\base\InvalidConfigException
      */
     public function clearAll($userId = null)
@@ -257,12 +253,26 @@ class NotificationManager extends Component
     /**
      * Returns array of notifications for this user in format.
      *
+     * @param null $userId
      * @return NotificationInterface[] List of notifications.
      * @throws \yii\base\InvalidConfigException
      */
     public function getNotifications($userId = null)
     {
         return $this->callTarget('findNotifications', [$this->resolveUserId($userId)]);
+    }
+
+    /**
+     * Returns one notification for this user in format.
+     *
+     * @param $id
+     * @param null $userId
+     * @return NotificationInterface Notification data
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function getNotification($id, $userId = null)
+    {
+        return $this->callTarget('findNotification', [$id, $this->resolveUserId($userId)]);
     }
 
     /**

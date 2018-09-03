@@ -135,7 +135,6 @@ class NotificationList extends \yii\base\Widget
      *
      * @param NotificationInterface $notification
      * @return string
-     * @throws \yii\base\InvalidConfigException
      */
     public function renderNotification(NotificationInterface $notification)
     {
@@ -162,6 +161,8 @@ class NotificationList extends \yii\base\Widget
 
     /**
      * Compile template replacements for use when rendering single notification
+     * @param $template
+     * @return array
      */
     protected function compileTemplateReplacements($template)
     {

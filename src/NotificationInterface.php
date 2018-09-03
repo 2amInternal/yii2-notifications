@@ -32,6 +32,7 @@ interface NotificationInterface
 
     /**
      * Sets notification ID
+     * @param $id int
      */
     public function setId($id);
 
@@ -44,6 +45,7 @@ interface NotificationInterface
 
     /**
      * Sets type of this notification.
+     * @param $type string
      */
     public function setType($type);
 

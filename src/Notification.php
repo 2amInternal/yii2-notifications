@@ -144,6 +144,7 @@ class Notification extends BaseObject implements NotificationInterface
 
     /**
      * Sets type of this notification.
+     * @param $type
      */
     public function setType($type)
     {

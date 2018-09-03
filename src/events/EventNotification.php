@@ -88,7 +88,7 @@ abstract class EventNotification extends \yii\base\BaseObject
      * @throws \yii\base\InvalidConfigException
      * @throws \dvamigos\Yii2\Notifications\exceptions\TargetStackEmptyException
      */
-    public function __invoke(\yii\base\Event $event)
+    public function __invoke(Event $event)
     {
         $type = is_callable($this->type) ? call_user_func($this->type, $this) : $this->type;
         $data = is_callable($this->data) ? call_user_func($this->data, $this) : $this->data;
