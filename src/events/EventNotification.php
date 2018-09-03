@@ -21,7 +21,7 @@ abstract class EventNotification extends \yii\base\BaseObject
      * If callable function then that function will be called to retrieve the value which must be string or false.
      *
      * Callable function should be in format:
-     * function($eventNotification) {
+     * function($eventNotification, $event) {
      *     return 'type';
      * }
      *
@@ -38,7 +38,7 @@ abstract class EventNotification extends \yii\base\BaseObject
      * If callable then that function will be called to get the array value.
      *
      * Callable function should be in format:
-     * function($eventNotification) {
+     * function($eventNotification, $event) {
      *     return ['mydata' => true];
      * }
      *
@@ -52,7 +52,7 @@ abstract class EventNotification extends \yii\base\BaseObject
      *
      * If value is null, current set target is used.
      * If value is callable, then that function is called which must return string or an array.
-     * function($eventNotification) {
+     * function($eventNotification, $event) {
      *     return 'mytarget';
      * }
      *
@@ -90,9 +90,9 @@ abstract class EventNotification extends \yii\base\BaseObject
      */
     public function __invoke(Event $event)
     {
-        $type = is_callable($this->type) ? call_user_func($this->type, $this) : $this->type;
-        $data = is_callable($this->data) ? call_user_func($this->data, $this) : $this->data;
-        $target = is_callable($this->target) ? call_user_func($this->target, $this) : $this->target;
+        $type = is_callable($this->type) ? call_user_func($this->type, $this, $event) : $this->type;
+        $data = is_callable($this->data) ? call_user_func($this->data, $this, $event) : $this->data;
+        $target = is_callable($this->target) ? call_user_func($this->target, $this, $event) : $this->target;
 
         if (!is_string($type)) {
             return;
