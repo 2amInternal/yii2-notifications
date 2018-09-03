@@ -13,6 +13,7 @@ use Yii;
 use yii\base\Component;
 use yii\base\Exception;
 use yii\di\Instance;
+use yii\helpers\ArrayHelper;
 use yii\web\User;
 
 class NotificationManager extends Component
@@ -71,14 +72,16 @@ class NotificationManager extends Component
      * Array should be in format:
      * [
      *      'typeName' => [
-     *          'key1' => 'Translatable Notification text for key 1',
-     *          'key2' => 'Translatable notification text for key 2'
+     *          'text' => [
+     *              'key1' => 'Translatable Notification text for key 1',
+     *              'key2' => 'Translatable notification text for key 2'
+     *          ]
      *      ]
      * ]
      *
      * It could also accept format:
      * [
-     *      'typeName' => 'Translatable notification for typeName'
+     *      'typeName' => ['text' => 'Translatable notification for typeName']
      * ]
      *
      * typeName - Type of the notification which will result in the notification text being shown.
@@ -86,10 +89,17 @@ class NotificationManager extends Component
      * You can specify your own groups which will be used in templates. Below is an example of one:
      * [
      *      'new_user_created' => [
-     *          'title' => 'New user {fullName} registered',
-     *          'message' => 'New user {fullName} just registered on site.'
+     *           'text' => [
+     *                 'title' => 'New user {fullName} registered',
+     *                 'message' => 'New user {fullName} just registered on site.'
+     *           ],
+     *           'default' => [
+     *                  'fullName' => 'Unknown'
+     *           ]
      *      ]
      * ]
+     *
+     * Params from 'default' will be merged with your own params so if you do not define a key it will have that default value.
      *
      * And to create this notification for current user you would use:
      * Yii::$app->notification->push('new_user_created', ['fullName' => 'John Doe']);
@@ -178,7 +188,7 @@ class NotificationManager extends Component
      */
     public function push($type, $data = [], $userId = null)
     {
-        $this->validateType($type);
+        $data = $this->mergeTypeData($type, $data);
         return $this->callTarget('create', [$type, $data, $this->resolveUserId($userId)]);
     }
 
@@ -195,7 +205,26 @@ class NotificationManager extends Component
      */
     public function update($id, $type, $data = [], $userId = null)
     {
-        $this->validateType($type);
+        $notification = $this->getNotification($id);
+        $data = ArrayHelper::merge($notification->getData(), $this->mergeTypeData($type, $data));
+
+        return $this->callTarget('update', [$id, $type, $data, $this->resolveUserId($userId)]);
+    }
+
+    /**
+     * Replaces existing notification with newly defined data.
+     *
+     * @param $id integer notification which will be updated
+     * @param $type string one of the types defined in $types
+     * @param array $data string translation data which will be applied when the notification is rendered.
+     * @param $userId integer|null For which user this will be applied. If null current user is used.
+     * @return NotificationInterface
+     * @throws \yii\base\InvalidConfigException
+     * @throws Exception
+     */
+    public function replace($id, $type, $data = [], $userId = null)
+    {
+        $data = $this->mergeTypeData($type, $data);
         return $this->callTarget('update', [$id, $type, $data, $this->resolveUserId($userId)]);
     }
 
@@ -280,25 +309,24 @@ class NotificationManager extends Component
      *
      * @param $type string Type defined in $types of this component.
      * @param array $data Data which will be used in Yii::t() of resolved text.
-     * @return string Resolved text.
+     * @return string|array Resolved text depending on the type
      *
      * @throws Exception
      */
     public function compileText($type, $data = [])
     {
-        $this->validateType($type);
+        $typeText = $this->getTypeText($type);
+        $data = $this->mergeTypeData($type, $data);
 
-        $typeData = $this->types[$type];
-
-        if (is_string($typeData)) {
-            return Yii::t($this->translationCategory, $typeData, $data);
+        if (is_string($typeText)) {
+            return Yii::t($this->translationCategory, $typeText, $data);
         }
 
-        foreach ($typeData as $key => $text) {
-            $typeData[$key] = Yii::t($this->translationCategory, $text, $data);
+        foreach ($typeText as $key => $text) {
+            $typeText[$key] = Yii::t($this->translationCategory, $text, $data);
         }
 
-        return $typeData;
+        return $typeText;
     }
 
     /**
@@ -329,6 +357,38 @@ class NotificationManager extends Component
             "This type '{type}' is not defined! Please check your configuration.", [
             'type' => $type
         ]));
+    }
+
+
+    /**
+     * Merges type data if type is valid.
+     *
+     * @param $type string Type which will be validated.
+     * @throws Exception If this type is not defined.
+     *
+     * @return array
+     */
+    protected function mergeTypeData($type, $withData = [])
+    {
+        $this->validateType($type);
+        return ArrayHelper::merge(
+            ArrayHelper::getValue($this->types[$type], 'default', []),
+            $withData
+        );
+    }
+
+    /**
+     * Returns type text if type is valid.
+     *
+     * @param $type string Type which will be validated.
+     * @throws Exception If this type is not defined.
+     *
+     * @return array
+     */
+    protected function getTypeText($type)
+    {
+        $this->validateType($type);
+        return ArrayHelper::getValue($this->types[$type], 'text', []);
     }
 
     /**
