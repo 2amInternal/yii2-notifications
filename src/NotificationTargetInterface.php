@@ -7,8 +7,6 @@
 
 namespace dvamigos\Yii2\Notifications;
 
-use dvamigos\Yii2\Notifications\exceptions\NotificationNotFoundException;
-
 interface NotificationTargetInterface
 {
     /**
@@ -108,7 +106,6 @@ interface NotificationTargetInterface
      * @param $id int Notification ID
      * @param $userId int Notification User ID
      * @return NotificationInterface
-     * @throws NotificationNotFoundException
      */
     public function findNotification($id, $userId);
 }

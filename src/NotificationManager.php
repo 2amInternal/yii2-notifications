@@ -440,7 +440,7 @@ class NotificationManager extends Component
      * @return NotificationTargetInterface
      * @throws \yii\base\InvalidConfigException
      */
-    protected function getTarget($targetName)
+    public function getTarget($targetName)
     {
         if (empty($this->targetObjects[$targetName])) {
             $this->targetObjects[$targetName] = $this->createTargetInstance($targetName);

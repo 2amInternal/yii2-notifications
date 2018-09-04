@@ -104,6 +104,11 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
     public function update($id, $type, $data, $userId)
     {
         $notification = $this->findNotification($id, $userId);
+
+        if (empty($notification)) {
+            throw new NotificationNotFoundException($id, $userId);
+        }
+
         $notification->setType($type);
         $notification->setData($data);
         $this->saveNotification($notification);
@@ -221,17 +226,12 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      *
      * @param $id int Notification ID
      * @param $userId int Notification User ID
-     * @return Notification
-     * @throws NotificationNotFoundException
+     * @return Notification|null
      * @throws \yii\base\InvalidConfigException
      */
     public function findNotification($id, $userId)
     {
         $model = $this->findNotificationInstance($id, $userId);
-
-        if (empty($model)) {
-            throw new NotificationNotFoundException($id, $userId);
-        }
 
         return $model;
     }
@@ -284,7 +284,7 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
 
     protected function saveNotification(Notification $notification)
     {
-        $data = [
+        $row = [
             'type' => $notification->getType(),
             'data' => Json::encode($notification->getData()),
             'user_id' => $notification->getUserId(),
@@ -295,9 +295,9 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         $db = $this->db->createCommand();
 
         if ($notification->getId() !== null) {
-            $db->update($this->notificationsTable, $data, ['id' => $notification->getId()]);
+            $db->update($this->notificationsTable, $row, ['id' => $notification->getId()]);
         } else {
-            $db->insert($this->notificationsTable, $data);
+            $db->insert($this->notificationsTable, $row);
         }
 
         $db->execute();

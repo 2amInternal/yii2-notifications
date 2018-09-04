@@ -25,6 +25,9 @@
             "url": "https://asset-packagist.org"
         }
     ],
+    "suggest": {
+        "guzzlehttp/guzzle": "Required when using AndroidFcmTarget (version ^6.3.3)"
+    },
     "config": {
         "process-timeout": 1800,
         "fxp-asset":{
