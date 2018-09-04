@@ -244,16 +244,22 @@ You can switch targets at any time using:
 
 ```php
 Yii::$app->notification->pushTarget('database'); // Will only send to database.
-Yii::$app->notification->pushTarget('android'); // Will only send to android.
-Yii::$app->notification->pushTarget(['android', 'ios']); // Will only send to android and ios targets.
+    Yii::$app->notification->pushTarget('android'); // Will only send to android.
+        Yii::$app->notification->pushTarget(['android', 'ios']); // Will only send to android and ios targets.
+            // Send notification to android/ios
+        Yii::$app->notification->popTarget(); // restores previous target - 'android'
+        // Send notification to android
+    Yii::$app->notification->popTarget(); // restores previous target - 'database'
+    // Send notification to database
+Yii::$app->notification->popTarget(); // restores previous target - as defined in initial configuration.
 ```
 
-Please not that you should use `popTarget()` to restore old behavior. Example:
+Please note that you should use `popTarget()` to restore old behavior. Example:
 
 ```php
 Yii::$app->notification->pushTarget(['android', 'ios']); // Will only send to android and ios targets.
 // send notification
-Yii::$app->notification->popTarget(); // restores old active target.
+Yii::$app->notification->popTarget(); // restores previous active target.
 ```
 
 You can call specific target using:
