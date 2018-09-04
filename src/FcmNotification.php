@@ -45,25 +45,25 @@ class FcmNotification extends Notification
     public function getFcmRequestData()
     {
         return [
-            'to' => $this->getToken(),
-            'notification' => $this->getNotificationData(),
-            'data' => $this->getAdditionalData()
+            'to' => $this->getNotificationToken(),
+            'notification' => $this->getFcmRequestNotification(),
+            'data' => $this->getFcmRequestAdditional()
         ];
     }
 
-    public function getToken()
+    public function getNotificationToken()
     {
         return $this->getData()[$this->tokenDataParam];
     }
 
-    protected function getAdditionalData()
+    protected function getFcmRequestAdditional()
     {
         return $this->getData()['additional'] ?? [];
     }
 
-    protected function getNotificationData()
+    protected function getFcmRequestNotification()
     {
-        $text = $this->getNotificationText();
+        $text = $this->getFcmCompiledText();
 
         return [
             'title' => ArrayHelper::getValue($text, $this->titleParam, '[unknown title]'),
@@ -72,7 +72,7 @@ class FcmNotification extends Notification
         ];
     }
 
-    protected function getNotificationText()
+    protected function getFcmCompiledText()
     {
         $text = $this->getCompiledText();
 
