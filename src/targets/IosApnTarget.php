@@ -13,6 +13,7 @@ use dvamigos\Yii2\Notifications\exceptions\NotificationNotFoundException;
 use dvamigos\Yii2\Notifications\NotificationInterface;
 use dvamigos\Yii2\Notifications\NotificationManager;
 use dvamigos\Yii2\Notifications\NotificationTargetInterface;
+use dvamigos\Yii2\Notifications\TokenRetrievalInterface;
 use Yii;
 use yii\base\BaseObject;
 use yii\base\Exception;
@@ -28,6 +29,8 @@ use yii\helpers\Json;
  */
 class IosApnTarget extends BaseObject implements NotificationTargetInterface
 {
+    use TokenRetrievalTrait;
+
     /** @var string|IosNotification */
     public $dataClass = IosNotification::class;
 
@@ -62,9 +65,27 @@ class IosApnTarget extends BaseObject implements NotificationTargetInterface
      */
     protected $socket = null;
 
+    /**
+     * Name of this target in manager.
+     * @var string
+     */
+    protected $name;
+
     public function init()
     {
         parent::init();
+
+        if (empty($this->pemFile)) {
+            throw new Exception('pemFile must be set.');
+        }
+
+        if (empty($this->password)) {
+            throw new Exception('password must be set.');
+        }
+
+        if (empty($this->tokenRetriever)) {
+            throw new Exception('tokenRetriever must be set.');
+        }
 
         register_shutdown_function(function () {
             $this->closeConnection();
@@ -272,7 +293,7 @@ class IosApnTarget extends BaseObject implements NotificationTargetInterface
     protected function sendPayload(IosNotification $notification)
     {
         $payload = Json::encode($notification->getBody());
-        $token = $notification->getNotificationToken();
+        $token = $this->getToken($notification);
 
         $binaryMessage = chr(0) . pack('n', 32) . pack('H*', $token) . pack('n', strlen($payload)) . $payload;
 

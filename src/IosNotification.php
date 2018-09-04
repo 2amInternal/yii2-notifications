@@ -32,13 +32,6 @@ class IosNotification extends Notification
     public $bodyParam = 'message';
 
     /**
-     * Token data param
-     *
-     * @var string
-     */
-    public $tokenDataParam = 'iosToken';
-
-    /**
      * Alert sound
      *
      * @var string
@@ -55,11 +48,6 @@ class IosNotification extends Notification
             'alert' => $this->getIosAlertData(),
             'sound' => $this->sound
         ];
-    }
-
-    public function getNotificationToken()
-    {
-        return $this->getData()[$this->tokenDataParam];
     }
 
     protected function getIosAlertData()

@@ -32,11 +32,11 @@ class FcmNotification extends Notification
     public $bodyParam = 'message';
 
     /**
-     * Token data param
+     * Token
      *
      * @var string
      */
-    public $tokenDataParam = 'fcmToken';
+    protected $token;
 
     /**
      * @return array
@@ -45,15 +45,15 @@ class FcmNotification extends Notification
     public function getFcmRequestData()
     {
         return [
-            'to' => $this->getNotificationToken(),
+            'to' => $this->token,
             'notification' => $this->getFcmRequestNotification(),
             'data' => $this->getFcmRequestAdditional()
         ];
     }
 
-    public function getNotificationToken()
+    public function setToken($token)
     {
-        return $this->getData()[$this->tokenDataParam];
+        $this->token = $token;
     }
 
     protected function getFcmRequestAdditional()

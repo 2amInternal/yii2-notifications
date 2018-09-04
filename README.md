@@ -203,12 +203,18 @@ Your default target is database but you can define your own using:
                 ],
                 'android' => [
                     'class' => '\dvamigos\Yii2\Notifications\targets\AndroidFcmTarget',
-                    'apiKey' => 'YOUR API KEY'
+                    'apiKey' => 'YOUR API KEY',
+                    'tokenRetriever' => function(NotificationInterface $n) {
+                        return $n->getData()['fcmToken'];
+                    }
                 ],
                 'ios' => [
                     'class' => '\dvamigos\Yii2\Notifications\targets\IosApnTarget',
                     'pemFile' => '@app/path/to/your/pem/file.pem',
-                    'password' => 'yourpassphrase'
+                    'password' => 'yourpassphrase',
+                    'tokenRetriever' => function(NotificationInterface $n) {
+                        return $n->getData()['iosToken'];
+                    }
                 ]
             ],
             'types' => [
@@ -228,6 +234,10 @@ Your default target is database but you can define your own using:
     ]
 ]
 ```
+
+### Note
+Please not that Android and iOS targets are WIP and not completely tested and might not work properly.
+
 
 Then using above configuration, when calling:
 ```php
@@ -276,9 +286,97 @@ Yii::$app->notification->forTargets(['ios', 'android'], function(NotificationMan
 ]);
 ```
 
-### Note
-Please not that Android and iOS targets are WIP and not completely tested and might not work properly.
+### Token retrieval
 
+Since some targets require additional token data for sending notification you can implement your own token retrieval logic based on which target needs which token.
+
+Token retriever can be a `callable` closure:
+
+```php
+[
+    'components' => [
+        'notifications' => [
+            'class' => '\dvamigos\Yii2\Notifications\NotificationManager',
+            'activeTarget' => ['database', 'android', 'ios'],
+            'targets' => [
+                'android' => [
+                    'class' => '\dvamigos\Yii2\Notifications\targets\AndroidFcmTarget',
+                    'apiKey' => 'YOUR API KEY',
+                    'tokenRetriever' => function(NotificationInterface $n) {
+                        return $n->getData()['fcmToken'];
+                    }
+                ]
+            ],
+        ]
+]
+```
+
+`tokenRetriever` callable will be called every time token is required for sending.
+
+`tokenRetriever` can also be a class which implements `dvamigos\Yii2\Notifications\TokenRetrievalInterface`.
+
+Class:
+
+```php
+class MyTokenRetrieval extends BaseObject implements dvamigos\Yii2\Notifications\TokenRetrievalInterface {
+    public $target;
+    
+    protected $cachedTokens = [];
+    
+     // This example assumes you have UserTokens ActiveRecord
+     // which has columns: user_id, type, token
+     // And that will be used to retrieve user's token.
+    public function getToken(NotificationInterface $n) {
+    
+         // This will cache tokens so that you dont need to
+         // hit database for every notification.
+         
+         if (!empty($this->cachedTokens[$n->getUserId()])) {
+              return $this->cachedTokens[$n->getUserId()];
+         }
+        
+         // Returns and caches token.
+         return $this->cachedTokens[$n->getUserId()] = UserTokens::find()
+            ->where([
+                'user_id' => $n->getId(),
+                'type' => $this->target
+            ])
+            ->select('token')
+            ->scalar() ?: '';
+    }
+
+}
+```
+
+Configuration:
+```php
+[
+    'components' => [
+        'notifications' => [
+            'class' => '\dvamigos\Yii2\Notifications\NotificationManager',
+            'activeTarget' => ['database', 'android', 'ios'],
+            'targets' => [
+                'android' => [
+                    'class' => '\dvamigos\Yii2\Notifications\targets\AndroidFcmTarget',
+                    'apiKey' => 'YOUR API KEY',
+                    'tokenRetriever' => [
+                        'class' => MyTokenRetrieval::class,
+                        'target' => 'android' 
+                    ]
+                ],
+                'ios' => [
+                    'class' => '\dvamigos\Yii2\Notifications\targets\IosApnTarget',
+                    'pemFile' => '@app/path/to/your/pem/file.pem',
+                    'password' => 'yourpassphrase',
+                    'tokenRetriever' => [
+                        'class' => MyTokenRetrieval::class,
+                        'target' => 'ios' 
+                    ]
+                ]
+            ],
+        ]
+]
+```
 
 # Displaying notifications
 

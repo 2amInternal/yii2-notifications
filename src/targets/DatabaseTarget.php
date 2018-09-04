@@ -57,6 +57,11 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         $this->db = Instance::ensure($this->db, Connection::class);
     }
 
+    /**
+     * Sets storage owner component.
+     *
+     * @param NotificationManager $owner
+     */
     public function setOwner(NotificationManager $owner)
     {
         $this->owner = $owner;

@@ -12,6 +12,8 @@ use dvamigos\Yii2\Notifications\FcmNotification;
 use dvamigos\Yii2\Notifications\exceptions\NotificationNotFoundException;
 use dvamigos\Yii2\Notifications\NotificationInterface;
 use dvamigos\Yii2\Notifications\NotificationManager;
+use dvamigos\Yii2\Notifications\TokenRetrievalInterface;
+use yii\base\Exception;
 use yii\di\Instance;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
@@ -24,8 +26,16 @@ use yii\helpers\Json;
  */
 class AndroidFcmTarget extends ApiClientTarget
 {
+    use TokenRetrievalTrait;
+
     /** @var string|FcmNotification */
     public $dataClass = FcmNotification::class;
+
+    /**
+     * Name of this target in manager.
+     * @var string
+     */
+    protected $name;
 
     /** @var NotificationManager */
     protected $owner;
@@ -36,6 +46,20 @@ class AndroidFcmTarget extends ApiClientTarget
      * @var string
      */
     public $apiKey;
+
+
+    public function init()
+    {
+        parent::init();
+
+        if (empty($this->apiKey)) {
+            throw new Exception('apiKey must be set.');
+        }
+
+        if (empty($this->tokenRetriever)) {
+            throw new Exception('tokenRetriever must be set.');
+        }
+    }
 
     /**
      * Sets storage owner component.
@@ -204,6 +228,8 @@ class AndroidFcmTarget extends ApiClientTarget
         $notification->setTimestamp(time());
         $notification->setRead(false);
         $notification->setUserId($userId);
+
+        $notification->setToken($this->getToken($notification));
 
         return $notification;
     }
