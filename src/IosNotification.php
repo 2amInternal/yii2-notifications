@@ -36,7 +36,7 @@ class IosNotification extends Notification
      *
      * @var string
      */
-    public $tokenDataParam = 'token';
+    public $tokenDataParam = 'iosToken';
 
     /**
      * Alert sound

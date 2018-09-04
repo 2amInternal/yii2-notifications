@@ -13,6 +13,7 @@ use dvamigos\Yii2\Notifications\exceptions\NotificationNotFoundException;
 use dvamigos\Yii2\Notifications\NotificationInterface;
 use dvamigos\Yii2\Notifications\NotificationManager;
 use dvamigos\Yii2\Notifications\NotificationTargetInterface;
+use Yii;
 use yii\base\BaseObject;
 use yii\base\Exception;
 use yii\di\Instance;
@@ -249,7 +250,7 @@ class IosApnTarget extends BaseObject implements NotificationTargetInterface
 
         $context = stream_context_create();
 
-        stream_context_set_option($context, 'ssl', 'local_cert', $this->pemFile);
+        stream_context_set_option($context, 'ssl', 'local_cert', Yii::getAlias($this->pemFile));
         stream_context_set_option($context, 'ssl', 'passphrase', $this->password);
 
         $socket = stream_socket_client(

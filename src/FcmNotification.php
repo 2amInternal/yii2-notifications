@@ -36,7 +36,7 @@ class FcmNotification extends Notification
      *
      * @var string
      */
-    public $tokenDataParam = 'token';
+    public $tokenDataParam = 'fcmToken';
 
     /**
      * @return array

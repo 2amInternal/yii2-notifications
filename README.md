@@ -11,7 +11,7 @@ To insert those migrations you need to run migration command:
 yii migrate --migrationPath=@vendor/dvamigos/yii2-notifications/src/migrations
 ```
 
-This will create `notifications` table in your database. If you don't plan to store your notifications in database then this step is not necessary.
+This will create `notification` table in your database. If you don't plan to store your notifications in database then this step is not necessary.
 
 Add notification component configuration in your application config:
 
@@ -183,6 +183,95 @@ public function behaviors()
 ```
 
 Then you can add your notification simply as:
+
+# Multiple targets
+
+You can define multiple targets when sending notifications effectively allowing you push notifications on phone devices, database, etc at the same time.
+
+Your default target is database but you can define your own using:
+
+```php
+[
+    'components' => [
+        'notifications' => [
+            'class' => '\dvamigos\Yii2\Notifications\NotificationManager',
+            'activeTarget' => ['database', 'android', 'ios'],
+            'targets' => [
+                'database' => [
+                    'class' => '\dvamigos\Yii2\Notifications\targets\DatabaseTarget',
+                    // ... config
+                ],
+                'android' => [
+                    'class' => '\dvamigos\Yii2\Notifications\targets\AndroidFcmTarget',
+                    'apiKey' => 'YOUR API KEY'
+                ],
+                'ios' => [
+                    'class' => '\dvamigos\Yii2\Notifications\targets\IosApnTarget',
+                    'pemFile' => '@app/path/to/your/pem/file.pem',
+                    'password' => 'yourpassphrase'
+                ]
+            ],
+            'types' => [
+                'new_user' => [
+                    'text' => [
+                        'title' => 'New user created!',
+                        'message' => 'New user {username} is created.'
+                    ],
+                    'default' => [
+                        'username' => '',
+                        'fullName' => 'Unknown',
+                        'gender' => 'male'
+                    ]
+                ]
+            ]
+        ]
+    ]
+]
+```
+
+Then using above configuration, when calling:
+```php
+Yii::$app->notifications->push('new_user', [
+    'username' => 'JohnDoe94',
+    'fcmToken' => "Your user's android notification token",
+    'iosToken' => "Your user's ios notification token"
+]);
+```
+
+You will send notification to database, your user's android device and ios device.
+
+You can switch targets at any time using:
+
+```php
+Yii::$app->notification->pushTarget('database'); // Will only send to database.
+Yii::$app->notification->pushTarget('android'); // Will only send to android.
+Yii::$app->notification->pushTarget(['android', 'ios']); // Will only send to android and ios targets.
+```
+
+Please not that you should use `popTarget()` to restore old behavior. Example:
+
+```php
+Yii::$app->notification->pushTarget(['android', 'ios']); // Will only send to android and ios targets.
+// send notification
+Yii::$app->notification->popTarget(); // restores old active target.
+```
+
+You can call specific target using:
+
+```php
+Yii::$app->notification->getTarget('database'); // Returns DatabaseTarget
+```
+
+Or you can execute command on specific targets using `forTargets()`
+
+```php
+Yii::$app->notification->forTargets(['ios', 'android'], function(NotificationManager $manager) {
+       $manager->push('notification'); // Will only push notification to ios, android
+]);
+```
+
+### Note
+Please not that Android and iOS targets are WIP and not completely tested and might not work properly.
 
 
 # Displaying notifications
