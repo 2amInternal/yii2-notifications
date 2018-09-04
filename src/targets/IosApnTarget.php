@@ -8,34 +8,67 @@
 namespace dvamigos\Yii2\Notifications\targets;
 
 
-use dvamigos\Yii2\Notifications\FcmNotification;
+use dvamigos\Yii2\Notifications\IosNotification;
 use dvamigos\Yii2\Notifications\exceptions\NotificationNotFoundException;
 use dvamigos\Yii2\Notifications\NotificationInterface;
 use dvamigos\Yii2\Notifications\NotificationManager;
+use dvamigos\Yii2\Notifications\NotificationTargetInterface;
+use yii\base\BaseObject;
+use yii\base\Exception;
 use yii\di\Instance;
-use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
 
+
 /**
- * Class AndroidFcmTarget
+ * Class IosApnTarget
  * @package dvamigos\Yii2\Notifications\targets
  *
  * NOTE: This class is not considered stable yet. Use it at your own risk.
  */
-class AndroidFcmTarget extends ApiClientTarget
+class IosApnTarget extends BaseObject implements NotificationTargetInterface
 {
-    /** @var string|FcmNotification */
-    public $dataClass = FcmNotification::class;
+    /** @var string|IosNotification */
+    public $dataClass = IosNotification::class;
+
+    /**
+     * Send APN request in sandbox mode.
+     *
+     * @var bool
+     */
+    public $sandbox = false;
+
+    /**
+     * Password for APN
+     *
+     * @var string
+     */
+    public $password;
+
+    /**
+     * Pem key file for APN
+     *
+     * @var string
+     */
+    public $pemFile;
 
     /** @var NotificationManager */
     protected $owner;
 
     /**
-     * API key for Google FCM
+     * Connection socket.
      *
-     * @var string
+     * @var resource|null
      */
-    public $apiKey;
+    protected $socket = null;
+
+    public function init()
+    {
+        parent::init();
+
+        register_shutdown_function(function () {
+            $this->closeConnection();
+        });
+    }
 
     /**
      * Sets storage owner component.
@@ -166,36 +199,28 @@ class AndroidFcmTarget extends ApiClientTarget
         return null;
     }
 
-    public function getBaseApiUrl()
+    protected function sendNotification(IosNotification $notification)
     {
-        return "https://fcm.googleapis.com/fcm";
+        if (!$this->socket) {
+            $this->openConnection();
+        }
+
+        return (bool)($this->sendPayload($notification));
     }
 
-    protected function clientOptions()
+    protected function getApiUrl()
     {
-        return [
-            'headers' => [
-                "Authorization" => "key={$this->apiKey}",
-                "Content-Type" => "application/json"
-            ]
-        ];
-    }
+        if ($this->sandbox) {
+            return 'ssl://gateway.sandbox.push.apple.com:2195';
+        }
 
-    protected function sendNotification(FcmNotification $notification)
-    {
-        $response = $this->sendRequest("POST", "send", [
-            'json' => $notification->getFcmRequestData()
-        ]);
-
-        $result = Json::decode($response->getBody()->getContents());
-
-        return ArrayHelper::getValue($result, 'success', 0) == 1;
+        return 'ssl://gateway.push.apple.com:2195';
     }
 
     protected function createNotificationInstance($type, $data, $userId)
     {
-        /** @var FcmNotification $notification */
-        $notification = Instance::ensure($this->dataClass, FcmNotification::class);
+        /** @var IosNotification $notification */
+        $notification = Instance::ensure($this->dataClass, IosNotification::class);
 
         $notification->setId(0);
         $notification->setOwner($this->owner);
@@ -206,5 +231,50 @@ class AndroidFcmTarget extends ApiClientTarget
         $notification->setUserId($userId);
 
         return $notification;
+    }
+
+    protected function closeConnection()
+    {
+        if (is_resource($this->socket)) {
+            fclose($this->socket);
+            $this->socket = null;
+        }
+    }
+
+    protected function openConnection()
+    {
+        if ($this->socket) {
+            $this->closeConnection();
+        }
+
+        $context = stream_context_create();
+
+        stream_context_set_option($context, 'ssl', 'local_cert', $this->pemFile);
+        stream_context_set_option($context, 'ssl', 'passphrase', $this->password);
+
+        $socket = stream_socket_client(
+            $this->getApiUrl(),
+            $errorCode,
+            $errorString,
+            60,
+            STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT,
+            $context
+        );
+
+        if (!is_resource($socket)) {
+            throw new Exception('Cannot connect to: ' . $this->getApiUrl());
+        }
+
+        return $socket;
+    }
+
+    protected function sendPayload(IosNotification $notification)
+    {
+        $payload = Json::encode($notification->getBody());
+        $token = $notification->getNotificationToken();
+
+        $binaryMessage = chr(0) . pack('n', 32) . pack('H*', $token) . pack('n', strlen($payload)) . $payload;
+
+        return fwrite($this->socket, $binaryMessage, strlen($binaryMessage));
     }
 }
