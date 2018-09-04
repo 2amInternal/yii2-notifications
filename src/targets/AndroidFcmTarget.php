@@ -14,6 +14,7 @@ use dvamigos\Yii2\Notifications\NotificationInterface;
 use dvamigos\Yii2\Notifications\NotificationManager;
 use yii\di\Instance;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Json;
 
 class AndroidFcmTarget extends ApiClientTarget
 {
@@ -180,7 +181,9 @@ class AndroidFcmTarget extends ApiClientTarget
             'json' => $notification->getFcmRequestData()
         ]);
 
-        return ArrayHelper::getValue($response, 'success', 0) == 1;
+        $result = Json::decode($response->getBody()->getContents());
+
+        return ArrayHelper::getValue($result, 'success', 0) == 1;
     }
 
     protected function createNotificationInstance($type, $data, $userId)
