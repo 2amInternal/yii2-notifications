@@ -205,9 +205,7 @@ class NotificationManager extends Component
      */
     public function update($id, $type, $data = [], $userId = null)
     {
-        $notification = $this->getNotification($id);
-        $data = ArrayHelper::merge($this->mergeTypeData($type, $data), $notification->getData());
-
+        $data = $this->mergeTypeData($type, $data);
         return $this->callTarget('update', [$id, $type, $data, $this->resolveUserId($userId)]);
     }
 

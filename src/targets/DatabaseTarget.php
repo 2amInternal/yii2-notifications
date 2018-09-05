@@ -17,6 +17,7 @@ use yii\base\Exception;
 use yii\db\Connection;
 use yii\db\Query;
 use yii\di\Instance;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
 
 class DatabaseTarget extends BaseObject implements NotificationTargetInterface
@@ -44,6 +45,12 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @var array
      */
     public $notificationOrder = ['created_at' => SORT_DESC];
+
+    /**
+     * Whether or not to throw errors if notification is not found.
+     * @var bool
+     */
+    public $silentNotFound = false;
 
     /** @var NotificationManager */
     protected $owner;
@@ -111,11 +118,15 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
         $notification = $this->findNotification($id, $userId);
 
         if (empty($notification)) {
+            if ($this->silentNotFound) {
+                return null;
+            }
+
             throw new NotificationNotFoundException($id, $userId);
         }
 
         $notification->setType($type);
-        $notification->setData($data);
+        $notification->setData(ArrayHelper::merge($data, $notification->getData()));
         $this->saveNotification($notification);
 
         return $notification;
@@ -235,21 +246,6 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      * @throws \yii\base\InvalidConfigException
      */
     public function findNotification($id, $userId)
-    {
-        $model = $this->findNotificationInstance($id, $userId);
-
-        return $model;
-    }
-
-    /**
-     * Find and returns notification instance or null if not found.
-     *
-     * @param $id int Notification ID
-     * @param $userId int Notification User ID
-     * @return Notification|null
-     * @throws \yii\base\InvalidConfigException
-     */
-    protected function findNotificationInstance($id, $userId)
     {
         $data = $this->getOneNotificationQuery($id, $userId)
             ->one($this->db);
