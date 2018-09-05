@@ -52,7 +52,11 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
      */
     public $silentNotFound = false;
 
-    /** @var NotificationManager */
+    /**
+     * Owner notification manager.
+     *
+     * @var NotificationManager
+     */
     protected $owner;
 
     /**
