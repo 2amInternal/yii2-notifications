@@ -129,8 +129,10 @@ class DatabaseTarget extends BaseObject implements NotificationTargetInterface
             throw new NotificationNotFoundException($id, $userId);
         }
 
+        $mergedData = $this->owner->mergeTypeData($type, $notification->getData());
+
         $notification->setType($type);
-        $notification->setData(ArrayHelper::merge($data, $notification->getData()));
+        $notification->setData(ArrayHelper::merge($mergedData, $data));
         $this->saveNotification($notification);
 
         return $notification;

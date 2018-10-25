@@ -205,7 +205,6 @@ class NotificationManager extends Component
      */
     public function update($id, $type, $data = [], $userId = null)
     {
-        $data = $this->mergeTypeData($type, $data);
         return $this->callTarget('update', [$id, $type, $data, $this->resolveUserId($userId)]);
     }
 
@@ -366,7 +365,7 @@ class NotificationManager extends Component
      *
      * @return array
      */
-    protected function mergeTypeData($type, $withData = [])
+    public function mergeTypeData($type, $withData = [])
     {
         $this->validateType($type);
         return ArrayHelper::merge(
