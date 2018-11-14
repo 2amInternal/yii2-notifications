@@ -455,7 +455,7 @@ Custom sections are also supported. And you can define them as:
 ]); ?>
 ```
 
-Please refer to `NotificationList` documentation in the code for more information on what is available.
+Please refer to `NotificationList` documentation in the code for more information on what options are available.
 
 Best practice is to extend this `NotificationList` widget with your own and implement this functionality
 based on needs for your own project.
